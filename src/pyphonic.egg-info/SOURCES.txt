@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/pyphonic/__init__.py
+src/pyphonic/demo.py
+src/pyphonic.egg-info/PKG-INFO
+src/pyphonic.egg-info/SOURCES.txt
+src/pyphonic.egg-info/dependency_links.txt
+src/pyphonic.egg-info/top_level.txt

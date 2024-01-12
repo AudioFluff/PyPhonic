@@ -1,0 +1,29 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyphonic"
+version = "1.0.0"
+authors = [
+  { name="Tom Grek", email="tom.grek@gmail.com" },
+]
+description = "Make a VST plugin for your DAW using Python"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    'License :: Free for non-commercial use',
+    'Topic :: Artistic Software',
+    'Topic :: Multimedia :: Sound/Audio',
+    'Topic :: Multimedia :: Sound/Audio :: MIDI',
+    'Topic :: Multimedia :: Sound/Audio :: Sound Synthesis',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    'Programming Language :: Python :: 3'
+]
+
+[project.urls]
+Homepage = "https://github.com/tomgrek/pyphonic"
+Issues = "https://github.com/tomgrek/pyphonic/issues"
