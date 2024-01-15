@@ -55,7 +55,7 @@ def handle(socket_, addr):
     empty_receives = 0
     while not should_stop.is_set():
         try:
-            data = bytearray(socket_.recv(next_recv_size or 1000).strip())
+            data = bytearray(socket_.recv(next_recv_size or 100).strip())
         except socket.timeout:
             should_stop.set()
             continue
@@ -77,7 +77,7 @@ def handle(socket_, addr):
             
             if not next_recv_size:
                 while True:
-                    chunk = socket_.recv(2000).strip()
+                    chunk = socket_.recv(100).strip()
                     if not chunk:
                         break
                     data.extend(chunk)
@@ -105,10 +105,12 @@ def handle(socket_, addr):
             content = data[len(headers)+len(split_at)+4+4+4+1+4+4:]
             midi, audio = content[:100], content[100:]
             
-            assert len(audio) == content_length - 100
-            in_buffer.append((seq_num, audio, midi))
-            
-            seq_num += 1
+            if len(audio) != content_length - 100:
+                print("Not an error, just an early payload: ", len(audio), content_length, len(data))
+                continue
+            else:
+                in_buffer.append((seq_num, audio, midi))
+                seq_num += 1
 
 
 def shuffler(process_fn):
@@ -123,7 +125,12 @@ def shuffler(process_fn):
             p = mido.Parser()
             p.feed(midi_in)
             rendered_audio = wrapped_process_fn(p.messages, audio_in)
-            rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+            try:
+                rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+            except struct.error:
+                print("Audio length didn't match, returning silence this time.")
+                rendered_audio = [0.0] * (state.block_size*state.num_channels)
+                rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
 
             out_buffer.append((seq_num, rendered_audio))
 

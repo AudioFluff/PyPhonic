@@ -57,7 +57,7 @@ class Synth:
 
 class Poly:
 
-    def __init__(self, sample_rate=44100, block_size=441):
+    def __init__(self, sample_rate=44100, block_size=64):
         self.synths = {}
         self.delay_buf = [0.0] * 12000
         self.delay_position = 0
@@ -110,9 +110,9 @@ class Poly:
         return cur * 2 # mono
 
 poly = Poly()
-poly.set_sample_rate_block_size(state.sample_rate, state.block_size)
 
 def process(midi_messages, audio):
+    poly.set_sample_rate_block_size(state.sample_rate, state.block_size)
     for m in midi_messages:
         if m.type == "note_on":
             if m.note < 20:
