@@ -1,14 +1,20 @@
 # Status: Python + Python-in-c++ code is identical! Except in Python they have to `from pyphonic import state`
+# position is transmitting correctly (both vst/python+network). min/max/rms also working (so i can make a compressor!)
 
 # TODO do the flippin kubernetes thing
 # Destruction test!
 # Some kind of authentication on top of the magic packet, maybe just on initial connect
+# Do something about: len(audio) is 2x block size, it's a flat array but it actually represents 2 channels.
+# transmit as 16bit ints ??
+# fix flaky test tone toggling (IN PROGRESS**)
+# collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
+
+# 
 # Add top menu bar to quickly try out some presets, ideally loaded from git... saturator, "piano minus the note's fundamental frequency as a
 # sine wave", etc.
 # Set up git repo, cicd, pypi for pyphonic. (Working on it)
 # Installer, packaging Python with it :(
 # Does it work on mac :(
-# Does it work in the DAW
 
 # python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8019)"
 
@@ -35,6 +41,13 @@ class State:
     num_channels = 2
     bpm = 120
     sample_num = 0
+    bar = 1
+    beat = 0
+    ticks = 0
+    is_playing = False
+    min = 0.0
+    max = 0.0
+    rms = 0.0
 
 state = State()
 
@@ -89,20 +102,23 @@ def handle(socket_, addr):
 
                     content_length = int.from_bytes(hex_length, byteorder="little")
                     (state.sample_rate, state.block_size, state.num_channels,
-                        state.bpm, state.sample_num) = struct.unpack('<2iBfl', content[4:21])
-                    print(state.sample_rate, state.block_size, state.num_channels, state.bpm, state.sample_num)
+                        state.bpm, state.sample_num, state.bar, state.beat, state.ticks,
+                        state.is_playing, state.min, state.max, state.rms) = struct.unpack('<2iBfl3i?3f', content[4:46])
                     
                     desired_length = int.from_bytes(headers[-4:], byteorder='little') + len(headers)
                     next_recv_size = int.from_bytes(headers[-4:], byteorder='little') + len(headers)
-                    print(f"Next recv size: {next_recv_size}")
+
+                    content_start = len(headers)+len(split_at)+4+4+4+1+4+4+4+4+4+1+4+4+4
                     if len(data) >= desired_length:
                         break
             # magic_num:total_msg_length:AUDIO:(content+midi)_length:samplerate:blocksize:numChannels:bpm:sample_num
+            # :bar:beat:ticks:is_playing:min:max:rms
             
             (state.sample_rate, state.block_size, state.num_channels,
-                state.bpm, state.sample_num) = struct.unpack('<2iBfl', data[17:34])
-            
-            content = data[len(headers)+len(split_at)+4+4+4+1+4+4:]
+                state.bpm, state.sample_num, state.bar, state.beat,
+                state.ticks, state.is_playing, state.min, state.max, state.rms) = struct.unpack('<2iBfl3i?3f', data[17:59])
+
+            content = data[content_start:]
             midi, audio = content[:100], content[100:]
             
             if len(audio) != content_length - 100:
@@ -121,7 +137,10 @@ def shuffler(process_fn):
     while not should_stop.wait(0.0001):
         while len(in_buffer) and not should_stop.is_set():
             seq_num, audio_in, midi_in = in_buffer.pop(0)
-            audio_in = struct.unpack(f"{state.block_size*state.num_channels}f", audio_in) # bytes -> floats
+            try:
+                audio_in = struct.unpack(f"{state.block_size*state.num_channels}f", audio_in)
+            except struct.error:
+                continue
             p = mido.Parser()
             p.feed(midi_in)
             rendered_audio = wrapped_process_fn(p.messages, audio_in)

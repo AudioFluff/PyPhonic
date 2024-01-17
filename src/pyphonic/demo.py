@@ -8,6 +8,7 @@ class Synth:
         self.tail = None
         self.stopped = True
         self.sample_rate = sample_rate # default, will be set by vst
+        self.sin_cache = {}
 
     def start_note(self, note, vel):
         self.currentAngle = 0.0
@@ -21,6 +22,15 @@ class Synth:
         self.cyclesPerSecond = noteToFreq(note)
         self.cyclesPerSample = self.cyclesPerSecond / self.sample_rate
         self.angleDelta = self.cyclesPerSample * 2 * math.pi
+    
+    def sin(self, val):
+        val = val % (2 * math.pi)
+        val = round(val, 3)
+        retval = self.sin_cache.get(val, None)
+        if retval is not None:
+            return retval
+        self.sin_cache[val] = math.sin(val)
+        return self.sin_cache[val]
     
     def stop_note(self):
         self.tail = 50000
@@ -39,7 +49,7 @@ class Synth:
         if abs(self.angleDelta) != 0 and not self.stopped:
             while num > 0:
                 num -= 1
-                cur = math.sin(self.currentAngle) * self.level
+                cur = self.sin(self.currentAngle) * self.level
                 if self.tail is not None:
                     cur *= self.tail / 50000
                     self.tail = self.tail - 1
@@ -82,24 +92,22 @@ class Poly:
             self.synths[note].stop_note()
     
     def render(self):
-        # This isn't a static value, it could change with each block, I'm lazily only setting it once
-        num_samples = self.block_size
 
         if not len(self.synths):
-            cur = [0.0] * num_samples
+            cur = [0.0] * self.block_size
         else:
             bufs = []
             one_active = False
             for note, synth in self.synths.items():
                 if synth.is_active():
                     one_active = True
-                    bufs.append(synth.render(num_samples))
+                    bufs.append(synth.render(self.block_size))
             if not one_active:
-                cur = [0.0] * num_samples
+                cur = [0.0] * self.block_size
             else:
                 cur = [sum(x) for x in zip(*bufs)]
 
-        for i in range(0, num_samples):
+        for i in range(0, self.block_size):
             in_ = cur[i]
             cur[i] += self.delay_buf[self.delay_position]
             self.delay_buf[self.delay_position] = (self.delay_buf[self.delay_position] + in_) * 0.5
@@ -123,4 +131,5 @@ def process(midi_messages, audio):
         else:
             print(m)
     
-    return poly.render()
+    render = poly.render()
+    return [x+y for x,y in zip(render, audio)]
