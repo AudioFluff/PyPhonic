@@ -10,7 +10,7 @@ This library is (one implementation of) the server component.
 
 ##### Here's an example that simply echoes back the audio received from the server:
 
-```
+```python
 import pyphonic
 from pyphonic import state  # this is a dynamic object with e.g. `state.bpm`
 
@@ -25,7 +25,7 @@ Enter the url http://127.0.0.1:8080 in the VST and voila, you have a perfectly u
 
 ##### Here's an example of a dynamic gain plugin
 
-```
+```python
 import pyphonic
 from pyphonic import state
 
