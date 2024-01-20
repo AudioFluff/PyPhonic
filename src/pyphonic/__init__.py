@@ -1,28 +1,32 @@
 # Status: Python + Python-in-c++ code is identical! Except in Python they have to `from pyphonic import state`
 # position is transmitting correctly (both vst/python+network). min/max/rms also working (so i can make a compressor!)
+# fixed the panning issue
+# numpy works. Perf is good. Fixed a major perf issue (thread doing nothing while using python only, not remote). Fixed mem leak.
+# reduced mem allocations.
+# can i get it to drop some packets if it gets too far behind? Not easily, was the answer. Dropping packets client side
+# did not work.
+
+# in progress: sending midi
 
 # TODO do the flippin kubernetes thing
 # Destruction test!
 # Some kind of authentication on top of the magic packet, maybe just on initial connect
-# Do something about: len(audio) is 2x block size, it's a flat array but it actually represents 2 channels.
-# transmit as 16bit ints ??
-# fix flaky test tone toggling (IN PROGRESS**)
 # collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
 
-# 
 # Add top menu bar to quickly try out some presets, ideally loaded from git... saturator, "piano minus the note's fundamental frequency as a
-# sine wave", etc.
+# sine wave", autopan, etc.
 # Set up git repo, cicd, pypi for pyphonic. (Working on it)
+# Github Pages for the (overall) docs
 # Installer, packaging Python with it :(
 # Does it work on mac :(
 
 # python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8019)"
+# python -c "import pyphonic; from pyphonic.demo_numpy import process_npy;  pyphonic.start(process_npy, 8037)"
 
 import socket
-import threading
-import math
 import struct
 import sys
+import threading
 import time
 
 import mido
@@ -130,7 +134,6 @@ def handle(socket_, addr):
 
 
 def shuffler(process_fn):
-
     def wrapped_process_fn(midi_messages, audio):
         return process_fn(midi_messages, audio)
 
@@ -138,14 +141,17 @@ def shuffler(process_fn):
         while len(in_buffer) and not should_stop.is_set():
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
-                audio_in = struct.unpack(f"{state.block_size*state.num_channels}f", audio_in)
-            except struct.error:
+                audio_in = struct.unpack(f"<{state.block_size*state.num_channels}f", audio_in)
+            except struct.error as e:
                 continue
             p = mido.Parser()
             p.feed(midi_in)
             rendered_audio = wrapped_process_fn(p.messages, audio_in)
             try:
-                rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+                if isinstance(rendered_audio, list):
+                    rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+                else:
+                    rendered_audio = rendered_audio.flatten().tobytes()
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (state.block_size*state.num_channels)
@@ -162,7 +168,7 @@ def responder(socket_):
         try:
             if not len(out_buffer):
                 continue
-            s, o = out_buffer.pop(0)
+            last_transmit, o = out_buffer.pop(0)
             transmit(socket_, o)
         except BrokenPipeError:
             print("Client disconnected, probably")

@@ -1,6 +1,4 @@
 import math
-from pyphonic import state
-
 class Synth:
     def __init__(self, sample_rate=44100):
         self.angleDelta = 0.0
@@ -118,23 +116,22 @@ class Poly:
         return cur * 2 # mono
 
 poly = Poly()
+import random
+from pyphonic import state
 
 def process(midi_messages, audio):
-    poly.set_sample_rate_block_size(state.sample_rate, state.block_size)
-    for m in midi_messages:
-        if m.type == "note_on":
-            if m.note < 20:
-                continue
-            poly.start_note(m.note, m.velocity/10)
-        elif m.type == "note_off":
-            poly.stop_note(m.note)
-        else:
-            print(m)
-    
-    render = poly.render()
-    return render
     newaudio = [0.0] * len(audio)
-    for i in range(len(audio)//2, len(audio)):
+    if random.choice([0,1]) == 0:
+        r = range(0, state.block_size)
+    else:
+        r = range(state.block_size, state.block_size*2)
+    for i in r:
         newaudio[i] = audio[i]
     return newaudio
-    #return [x+y for x,y in zip(render, audio)]
+
+
+
+
+
+
+    return poly.render()
