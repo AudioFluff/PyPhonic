@@ -1,4 +1,4 @@
-**/*.py
+**/*.pyc
 dist/
 build/
 **/__pycache__
