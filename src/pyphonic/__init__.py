@@ -41,6 +41,7 @@ seq_num = 0
 block_size = 44100, 441
 
 class State:
+    """State of the audio engine"""
     sample_rate = 44100
     block_size = 441
     num_channels = 2
