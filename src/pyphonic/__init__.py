@@ -5,8 +5,7 @@
 # reduced mem allocations.
 # can i get it to drop some packets if it gets too far behind? Not easily, was the answer. Dropping packets client side
 # did not work.
-
-# in progress: sending midi
+# midi is working both VST side and network side.
 
 # TODO do the flippin kubernetes thing
 # Destruction test!
@@ -144,20 +143,23 @@ def shuffler(process_fn):
                 audio_in = struct.unpack(f"<{state.block_size*state.num_channels}f", audio_in)
             except struct.error as e:
                 continue
-            p = mido.Parser()
-            p.feed(midi_in)
-            rendered_audio = wrapped_process_fn(p.messages, audio_in)
+            rendered_midi, rendered_audio = wrapped_process_fn(mido.parse_all(midi_in), audio_in)
             try:
                 if isinstance(rendered_audio, list):
                     rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
                 else:
                     rendered_audio = rendered_audio.flatten().tobytes()
+                assert isinstance(rendered_midi, bytearray)
+                rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (state.block_size*state.num_channels)
                 rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+            except Exception as e:
+                print(f"Error {e}. Maybe rendered midi wasn't a bytearray?")
+                continue
 
-            out_buffer.append((seq_num, rendered_audio))
+            out_buffer.append((seq_num, rendered_midi, rendered_audio))
 
 def responder(socket_):
     safe_to_transmit.wait(10)
@@ -168,8 +170,8 @@ def responder(socket_):
         try:
             if not len(out_buffer):
                 continue
-            last_transmit, o = out_buffer.pop(0)
-            transmit(socket_, o)
+            s, m, a = out_buffer.pop(0)
+            transmit(socket_, m + a)
         except BrokenPipeError:
             print("Client disconnected, probably")
             should_stop.set()

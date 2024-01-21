@@ -126,13 +126,15 @@ def process(midi_messages, audio):
             if m.note < 20:
                 continue
             poly.start_note(m.note, m.velocity/10)
+            print(f"Starting note {m.note}")
         elif m.type == "note_off":
+            #print(f"Stopping note {m.note}")
             poly.stop_note(m.note)
         else:
             print(m)
     
     render = poly.render()
-    return render
+    return bytearray(b"\x90\x4a\x5a"), render
     newaudio = [0.0] * len(audio)
     for i in range(len(audio)//2, len(audio)):
         newaudio[i] = audio[i]
