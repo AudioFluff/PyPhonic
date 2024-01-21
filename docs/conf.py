@@ -24,11 +24,8 @@ version = release = '1.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.githubpages',
-    'sphinxcontrib.gtagjs',
+    'sphinx.ext.githubpages'
 ]
-
-gtagjs_ids = ['G-E4SNX0WZYV']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
