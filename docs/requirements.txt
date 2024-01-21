@@ -1,2 +1,2 @@
-furo
-sphinx
+sphinxawesome_theme
+mido
