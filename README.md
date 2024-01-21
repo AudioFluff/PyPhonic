@@ -1,6 +1,10 @@
 # Pyphonic
 
+![Publish workflow](https://github.com/tomgrek/pyphonic/actions/workflows/python-publish.yml/badge.svg) ![Docs workflow](https://github.com/tomgrek/pyphonic/actions/workflows/pages-publish.yml/badge.svg) 
+
 This is the Python library for the Pyphonic VST plugin.
+
+Docs: https://tomgrek.github.io/pyphonic/
 
 The VST streams audio and midi to some server; the server responds with some processed audio.
 
