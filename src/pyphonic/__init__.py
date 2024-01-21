@@ -8,6 +8,8 @@
 # midi is working both VST side and network side.
 
 # TODO do the flippin kubernetes thing
+# widgets for oscilloscope, display midi notes output
+# sort out why user must return a bytearray. wrap this!
 # Destruction test!
 # Some kind of authentication on top of the magic packet, maybe just on initial connect
 # collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
