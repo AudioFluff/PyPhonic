@@ -8,8 +8,8 @@ A Python server for a VST plugin client.
 .. toctree::
    :caption: Contents
 
-   Quickstart
-   Examples
-   Reference
+   quickstart
+   examples
+   reference
 
 .. autofunction:: pyphonic.State

@@ -1,23 +1,31 @@
-# Status: Python + Python-in-c++ code is identical! Except in Python they have to `from pyphonic import state`
+# Status: Python + Python-in-c++ code is identical!
 # position is transmitting correctly (both vst/python+network). min/max/rms also working (so i can make a compressor!)
 # fixed the panning issue
 # numpy works. Perf is good. Fixed a major perf issue (thread doing nothing while using python only, not remote). Fixed mem leak.
 # reduced mem allocations.
-# can i get it to drop some packets if it gets too far behind? Not easily, was the answer. Dropping packets client side
-# did not work.
 # midi is working both VST side and network side.
+# docs are in github pages
+# utilizing circular buffer to transmit audio works well.
+# Zero memory leaking when python is running. Confirmed!
+# Python updated to embeddable 3.12
+# Pyphonic module is created; it has c++ functions that can be called from python.
+# Print statement is overridden in Python and sends to C++ stdout.
+
+# adding thing to save state in vst,
+# but vs started being a pisant and won't debug. It seemed to work but now won't reload the plugin, e.g. save the set in studio one
+# reopen it, and pyphonic's a dodo. Most likely it's the pybind11 leak??
 
 # TODO do the flippin kubernetes thing
 # widgets for oscilloscope, display midi notes output
 # sort out why user must return a bytearray. wrap this!
 # Destruction test!
+# factor out mido
 # Some kind of authentication on top of the magic packet, maybe just on initial connect
 # collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
 
 # Add top menu bar to quickly try out some presets, ideally loaded from git... saturator, "piano minus the note's fundamental frequency as a
 # sine wave", autopan, etc.
 # Set up git repo, cicd, pypi for pyphonic. (Working on it)
-# Github Pages for the (overall) docs
 # Installer, packaging Python with it :(
 # Does it work on mac :(
 
