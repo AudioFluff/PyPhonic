@@ -10,16 +10,20 @@
 # Python updated to embeddable 3.12
 # Pyphonic module is created; it has c++ functions that can be called from python.
 # Print statement is overridden in Python and sends to C++ stdout.
+# State in VST is saved and restored correctly (in DAW). Saving and reopening, multiple times across sessions/same session/DAW restarts works.
+# Widget displaying Python print statement output is working.
+# PythonRunning is now part of the plugin's state and can be automated. However, suggest users to use bypass instead since switching it on requires reinitialization.
+# Messages are created and sent to the process/process_npy method as pyphonic.midimessages.
+# Midi messages coming from Python are displayed in the widget.
+# Nasty sporadic crash fixed.
 
-# adding thing to save state in vst,
-# but vs started being a pisant and won't debug. It seemed to work but now won't reload the plugin, e.g. save the set in studio one
-# reopen it, and pyphonic's a dodo. Most likely it's the pybind11 leak??
+# in progress: Reimplement mido-like functionality in the pythonic library, server side (so Python::server is using same code as Python::in_vst). Remove mido dep.
 
 # TODO do the flippin kubernetes thing
-# widgets for oscilloscope, display midi notes output
-# sort out why user must return a bytearray. wrap this!
+# Fix minor memory leak in the cython midi parser code.
+# Midimessages should support more than note_on/off, and they should have their timestamps (I understand a bit more about that now).
+# Better UI for codebox. Widget for oscilloscope. Reinstate the dropdown, and actually add some stuff.
 # Destruction test!
-# factor out mido
 # Some kind of authentication on top of the magic packet, maybe just on initial connect
 # collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
 
@@ -143,6 +147,14 @@ def handle(socket_, addr):
                 seq_num += 1
 
 
+def parse_bytes_to_midi(bytes_):
+    return mido.parse_all(bytes_)
+
+def parse_midi_to_bytes(midi_messages):
+    assert isinstance(midi_messages, bytearray)
+    midi_messages = midi_messages[:100] + b'0' * (100 - len(midi_messages))
+    return midi_messages
+
 def shuffler(process_fn):
     def wrapped_process_fn(midi_messages, audio):
         return process_fn(midi_messages, audio)
@@ -154,14 +166,13 @@ def shuffler(process_fn):
                 audio_in = struct.unpack(f"<{state.block_size*state.num_channels}f", audio_in)
             except struct.error as e:
                 continue
-            rendered_midi, rendered_audio = wrapped_process_fn(mido.parse_all(midi_in), audio_in)
+            rendered_midi, rendered_audio = wrapped_process_fn(parse_bytes_to_midi(midi_in), audio_in)
             try:
                 if isinstance(rendered_audio, list):
                     rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
                 else:
                     rendered_audio = rendered_audio.flatten().tobytes()
-                assert isinstance(rendered_midi, bytearray)
-                rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
+                rendered_midi = parse_midi_to_bytes(rendered_midi)
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (state.block_size*state.num_channels)
