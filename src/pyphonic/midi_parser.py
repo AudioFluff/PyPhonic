@@ -1,46 +1,44 @@
+class MidiMessage:
+    def __init__(self, type_, note, velocity, channel):
+        self.type = type_
+        self.note = note
+        self.velocity = velocity
+        self.channel = channel
+        plain_type = type_.replace("_", " ").title()
+        self.description = f"{plain_type} {get_note_info(note)} Velocity {velocity} Channel {channel}"
 
-def parse_midi_bytes(midi_bytes):
+def parse_bytes_to_midi(midi_bytes):
     midi_messages = []
     
-    while midi_bytes:
-        status_byte = midi_bytes[0]
+    while len(midi_bytes) >= 3:
+        status_byte = midi_bytes[0] & 0xF0
         
-        # Check the status byte to determine the type of MIDI message
-        if status_byte & 0xF0 == 0x80:
+        if status_byte == 0x00:
+            message_type = "skip"
+        elif status_byte == 0x80:
             message_type = "note_off"
-        elif status_byte & 0xF0 == 0x90:
+        elif status_byte == 0x90:
             message_type = "note_on"
-        elif status_byte & 0xF0 == 0xA0:
+        elif status_byte == 0xA0:
             message_type = "polyphonic_aftertouch"
-        elif status_byte & 0xF0 == 0xB0:
+        elif status_byte == 0xB0:
             message_type = "control_change"
-        elif status_byte & 0xF0 == 0xC0:
+        elif status_byte == 0xC0:
             message_type = "program_change"
-        elif status_byte & 0xF0 == 0xD0:
+        elif status_byte == 0xD0:
             message_type = "channel_aftertouch"
-        elif status_byte & 0xF0 == 0xE0:
+        elif status_byte == 0xE0:
             message_type = "pitch_wheel_change"
         else:
             message_type = "unknown"
         
-        # Extract the note, velocity, and channel from the MIDI bytes
-        note = midi_bytes[1]
-        velocity = midi_bytes[2]
-        channel = status_byte & 0x0F
+        if message_type != "skip":
+            note = midi_bytes[1]
+            velocity = midi_bytes[2]
+            channel = midi_bytes[0] & 0x0F
+            midi_message = MidiMessage(message_type, note, velocity, channel)
+            midi_messages.append(midi_message)
         
-        # Create a MIDI message object with the extracted attributes
-        midi_message = {
-            "type": message_type,
-            "note": note,
-            "velocity": velocity,
-            "channel": channel,
-            "description": f"{message_type} - Note: {note}, Velocity: {velocity}, Channel: {channel}"
-        }
-        
-        # Append the MIDI message to the list
-        midi_messages.append(midi_message)
-        
-        # Remove the processed bytes from the MIDI bytes
         midi_bytes = midi_bytes[3:]
     
     return midi_messages
@@ -48,11 +46,40 @@ def parse_midi_bytes(midi_bytes):
 
 def get_note_info(midi_note):
     notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    octave = (midi_note // 12) - 1
     note_index = midi_note % 12
     note_name = notes[note_index]
-    if len(note_name) == 2:
-        return note_name[0], "sharp"
-    else:
-        return note_name, "flat"
+    return f"{note_name}{octave}"
 
 
+def parse_midi_to_bytes(midi_messages):
+    midi_bytes = []
+    
+    for midi_message in midi_messages:
+        message_type = midi_message.type
+        note = midi_message.note
+        velocity = midi_message.velocity
+        channel = midi_message.channel
+        
+        if message_type == "note_off":
+            status_byte = 0x80 | channel
+        elif message_type == "note_on":
+            status_byte = 0x90 | channel
+        elif message_type == "polyphonic_aftertouch":
+            status_byte = 0xA0 | channel
+        elif message_type == "control_change":
+            status_byte = 0xB0 | channel
+        elif message_type == "program_change":
+            status_byte = 0xC0 | channel
+        elif message_type == "channel_aftertouch":
+            status_byte = 0xD0 | channel
+        elif message_type == "pitch_wheel_change":
+            status_byte = 0xE0 | channel
+        else:
+            continue
+
+        midi_bytes.append(status_byte)
+        midi_bytes.append(note)
+        midi_bytes.append(velocity)
+    
+    return bytes(midi_bytes)

@@ -16,11 +16,20 @@
 # Messages are created and sent to the process/process_npy method as pyphonic.midimessages.
 # Midi messages coming from Python are displayed in the widget.
 # Nasty sporadic crash fixed.
+# No mido dep.
+# Basic process() now uses numpy to pass the data, like process_npy() did already. Faster.
+# One mem leak fixed. Done first bit of transferring state from being an object that's computed every pass,
+# to being a function that's only called when necessary. Still WIP for transport info and signal stats.
+# Listboxes are efficient now and don't hog the CPU.
+# Mem leaks and sporadic crashes are fixed.
+# 
 
-# in progress: Reimplement mido-like functionality in the pythonic library, server side (so Python::server is using same code as Python::in_vst). Remove mido dep.
+# in progress: Moving state (transport info, signal stats) to lazy functions. Then update python/server code to be compatible.
+# Check what happens if user wants to keep a reference to a numpy array from the previous process(). 
+# The mem is probably dead/overwritten due to OWNDATA changes. So I would have to document this: use copy.deepcopy (not)
+# or numpy.copy (should not be an issue if using lists).
 
 # TODO do the flippin kubernetes thing
-# Fix minor memory leak in the cython midi parser code.
 # Midimessages should support more than note_on/off, and they should have their timestamps (I understand a bit more about that now).
 # Better UI for codebox. Widget for oscilloscope. Reinstate the dropdown, and actually add some stuff.
 # Destruction test!
@@ -42,7 +51,8 @@ import sys
 import threading
 import time
 
-import mido
+from pyphonic.midi_parser import parse_bytes_to_midi as _parse_bytes_to_midi
+from pyphonic.midi_parser import parse_midi_to_bytes as _parse_midi_to_bytes
 
 all_threads = []
 should_stop = threading.Event()
@@ -146,15 +156,6 @@ def handle(socket_, addr):
                 in_buffer.append((seq_num, audio, midi))
                 seq_num += 1
 
-
-def parse_bytes_to_midi(bytes_):
-    return mido.parse_all(bytes_)
-
-def parse_midi_to_bytes(midi_messages):
-    assert isinstance(midi_messages, bytearray)
-    midi_messages = midi_messages[:100] + b'0' * (100 - len(midi_messages))
-    return midi_messages
-
 def shuffler(process_fn):
     def wrapped_process_fn(midi_messages, audio):
         return process_fn(midi_messages, audio)
@@ -166,19 +167,20 @@ def shuffler(process_fn):
                 audio_in = struct.unpack(f"<{state.block_size*state.num_channels}f", audio_in)
             except struct.error as e:
                 continue
-            rendered_midi, rendered_audio = wrapped_process_fn(parse_bytes_to_midi(midi_in), audio_in)
+            rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
             try:
                 if isinstance(rendered_audio, list):
                     rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
                 else:
                     rendered_audio = rendered_audio.flatten().tobytes()
-                rendered_midi = parse_midi_to_bytes(rendered_midi)
+                rendered_midi = _parse_midi_to_bytes(rendered_midi)
+                rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (state.block_size*state.num_channels)
                 rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
             except Exception as e:
-                print(f"Error {e}. Maybe rendered midi wasn't a bytearray?")
+                print(f"Error {e}. Returned midi should be a list of pyphonic.MidiMessages.")
                 continue
 
             out_buffer.append((seq_num, rendered_midi, rendered_audio))
