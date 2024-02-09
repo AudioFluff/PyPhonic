@@ -1,56 +1,11 @@
-# Status: Python + Python-in-c++ code is identical!
-# position is transmitting correctly (both vst/python+network). min/max/rms also working (so i can make a compressor!)
-# fixed the panning issue
-# numpy works. Perf is good. Fixed a major perf issue (thread doing nothing while using python only, not remote). Fixed mem leak.
-# reduced mem allocations.
-# midi is working both VST side and network side.
-# docs are in github pages
-# utilizing circular buffer to transmit audio works well.
-# Zero memory leaking when python is running. Confirmed!
-# Python updated to embeddable 3.12
-# Pyphonic module is created; it has c++ functions that can be called from python.
-# Print statement is overridden in Python and sends to C++ stdout.
-# State in VST is saved and restored correctly (in DAW). Saving and reopening, multiple times across sessions/same session/DAW restarts works.
-# Widget displaying Python print statement output is working.
-# PythonRunning is now part of the plugin's state and can be automated. However, suggest users to use bypass instead since switching it on requires reinitialization.
-# Messages are created and sent to the process/process_npy method as pyphonic.midimessages.
-# Midi messages coming from Python are displayed in the widget.
-# Nasty sporadic crash fixed.
-# No mido dep.
-# Basic process() now uses numpy to pass the data, like process_npy() did already. Faster.
-# One mem leak fixed. Done first bit of transferring state from being an object that's computed every pass,
-# to being a function that's only called when necessary. Still WIP for transport info and signal stats.
-# Listboxes are efficient now and don't hog the CPU.
-# Mem leaks and sporadic crashes are fixed.
-# 
-
-# in progress: Moving state (transport info, signal stats) to lazy functions. Then update python/server code to be compatible.
-# Check what happens if user wants to keep a reference to a numpy array from the previous process(). 
-# The mem is probably dead/overwritten due to OWNDATA changes. So I would have to document this: use copy.deepcopy (not)
-# or numpy.copy (should not be an issue if using lists).
-
-# TODO do the flippin kubernetes thing
-# Midimessages should support more than note_on/off, and they should have their timestamps (I understand a bit more about that now).
-# Better UI for codebox. Widget for oscilloscope. Reinstate the dropdown, and actually add some stuff.
-# Destruction test!
-# Some kind of authentication on top of the magic packet, maybe just on initial connect
-# collection of primitives, e.g. return (sinewave(72).pan(-0.8) + sawtooth(72, drift=0.1).pan(0.7)).delay("3/16", wet=0.6).filter("hp12", cutoff=300)...
-
-# Add top menu bar to quickly try out some presets, ideally loaded from git... saturator, "piano minus the note's fundamental frequency as a
-# sine wave", autopan, etc.
-# Set up git repo, cicd, pypi for pyphonic. (Working on it)
-# Installer, packaging Python with it :(
-# Does it work on mac :(
-
-# python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8019)"
-# python -c "import pyphonic; from pyphonic.demo_numpy import process_npy;  pyphonic.start(process_npy, 8037)"
-
 import socket
 import struct
 import sys
 import threading
 import time
 
+from pyphonic.functions import _state
+from pyphonic.functions import *
 from pyphonic.midi_parser import parse_bytes_to_midi as _parse_bytes_to_midi
 from pyphonic.midi_parser import parse_midi_to_bytes as _parse_midi_to_bytes
 
@@ -61,23 +16,6 @@ safe_to_transmit = threading.Event()
 in_buffer, out_buffer = [], []
 seq_num = 0
 block_size = 44100, 441
-
-class State:
-    """State of the audio engine"""
-    sample_rate = 44100
-    block_size = 441
-    num_channels = 2
-    bpm = 120
-    sample_num = 0
-    bar = 1
-    beat = 0
-    ticks = 0
-    is_playing = False
-    min = 0.0
-    max = 0.0
-    rms = 0.0
-
-state = State()
 
 def transmit(socket, b: bytes):
     magic_num = 15
@@ -129,9 +67,9 @@ def handle(socket_, addr):
                     hex_length = content[:4]
 
                     content_length = int.from_bytes(hex_length, byteorder="little")
-                    (state.sample_rate, state.block_size, state.num_channels,
-                        state.bpm, state.sample_num, state.bar, state.beat, state.ticks,
-                        state.is_playing, state.min, state.max, state.rms) = struct.unpack('<2iBfl3i?3f', content[4:46])
+                    (_state.sample_rate, _state.block_size, _state.num_channels,
+                        _state.bpm, _state.sample_num, _state.bar, _state.beat, _state.ticks,
+                        _state.is_playing, _state.min, _state.max, _state.rms) = struct.unpack('<2iBfl3i?3f', content[4:46])
                     
                     desired_length = int.from_bytes(headers[-4:], byteorder='little') + len(headers)
                     next_recv_size = int.from_bytes(headers[-4:], byteorder='little') + len(headers)
@@ -142,9 +80,9 @@ def handle(socket_, addr):
             # magic_num:total_msg_length:AUDIO:(content+midi)_length:samplerate:blocksize:numChannels:bpm:sample_num
             # :bar:beat:ticks:is_playing:min:max:rms
             
-            (state.sample_rate, state.block_size, state.num_channels,
-                state.bpm, state.sample_num, state.bar, state.beat,
-                state.ticks, state.is_playing, state.min, state.max, state.rms) = struct.unpack('<2iBfl3i?3f', data[17:59])
+            (_state.sample_rate, _state.block_size, _state.num_channels,
+                _state.bpm, _state.sample_num, _state.bar, _state.beat,
+                _state.ticks, _state.is_playing, _state.min, _state.max, _state.rms) = struct.unpack('<2iBfl3i?3f', data[17:59])
 
             content = data[content_start:]
             midi, audio = content[:100], content[100:]
@@ -164,21 +102,21 @@ def shuffler(process_fn):
         while len(in_buffer) and not should_stop.is_set():
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
-                audio_in = struct.unpack(f"<{state.block_size*state.num_channels}f", audio_in)
+                audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
             except struct.error as e:
                 continue
             rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
             try:
                 if isinstance(rendered_audio, list):
-                    rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+                    rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
                 else:
                     rendered_audio = rendered_audio.flatten().tobytes()
                 rendered_midi = _parse_midi_to_bytes(rendered_midi)
                 rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
-                rendered_audio = [0.0] * (state.block_size*state.num_channels)
-                rendered_audio = struct.pack(f"{state.block_size*state.num_channels}f", *rendered_audio)
+                rendered_audio = [0.0] * (_state.block_size*_state.num_channels)
+                rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
             except Exception as e:
                 print(f"Error {e}. Returned midi should be a list of pyphonic.MidiMessages.")
                 continue

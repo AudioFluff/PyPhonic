@@ -12,6 +12,20 @@ This library is (one implementation of) the server component.
 
 ## Quickstart
 
+##### Super Quick Demo
+
+```bash
+python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8020)"
+```
+
+Or if you want to use `numpy`:
+
+```bash
+python -c "import pyphonic; from pyphonic.demo_numpy import process_npy;  pyphonic.start(process_npy, 8020)"
+```
+
+Enter `127.0.0.1:8020` in the VST and you'll hear synthesized tones for each MIDI note you press.
+
 ##### Here's an example that simply echoes back the audio received from the server:
 
 ```python
@@ -25,7 +39,7 @@ PORT = 8020
 pyphonic.start(process, PORT)
 ```
 
-Enter the url http://127.0.0.1:8080 in the VST and voila, you have a perfectly useless plugin.
+Enter the url http://127.0.0.1:8020 in the VST and voila, you have a perfectly useless plugin.
 
 ##### Here's an example of a dynamic gain plugin
 

@@ -1,5 +1,5 @@
 import math
-from pyphonic import state
+import pyphonic
 
 class Synth:
     def __init__(self, sample_rate=44100):
@@ -120,23 +120,16 @@ class Poly:
 poly = Poly()
 
 def process(midi_messages, audio):
-    poly.set_sample_rate_block_size(state.sample_rate, state.block_size)
+    poly.set_sample_rate_block_size(pyphonic.getSampleRate(), pyphonic.getBlockSize())
     for m in midi_messages:
         if m.type == "note_on":
             if m.note < 20:
                 continue
             poly.start_note(m.note, m.velocity/10)
-            print(f"Starting note {m.note}")
         elif m.type == "note_off":
-            #print(f"Stopping note {m.note}")
             poly.stop_note(m.note)
         else:
             print(m)
     
     render = poly.render()
     return midi_messages, render
-    newaudio = [0.0] * len(audio)
-    for i in range(len(audio)//2, len(audio)):
-        newaudio[i] = audio[i]
-    return newaudio
-    #return [x+y for x,y in zip(render, audio)]
