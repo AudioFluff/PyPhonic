@@ -1,0 +1,12 @@
+[
+    {
+        "id": 1,
+        "name": "Init (Plain Python)",
+        "code": "import pyphonic\ndef process(midi, audio):\n    return midi, audio"
+    },
+    {
+        "id": 2,
+        "name": "Init (Python with NumPy)",
+        "code": "import numpy as np\nimport pyphonic\ndef process_npy(midi, audio):\n    return midi, audio"
+    }
+]

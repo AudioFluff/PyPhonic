@@ -8,7 +8,6 @@ class Synth:
         self.tail = None
         self.stopped = True
         self.sample_rate = sample_rate # default, will be set by vst
-        self.sin_cache = {}
 
     def start_note(self, note, vel):
         self.currentAngle = 0.0
@@ -24,13 +23,7 @@ class Synth:
         self.angleDelta = self.cyclesPerSample * 2 * math.pi
     
     def sin(self, val):
-        val = val % (2 * math.pi)
-        val = round(val, 3)
-        retval = self.sin_cache.get(val, None)
-        if retval is not None:
-            return retval
-        self.sin_cache[val] = math.sin(val)
-        return self.sin_cache[val]
+        return math.sin(val)
     
     def stop_note(self):
         self.tail = 50000
