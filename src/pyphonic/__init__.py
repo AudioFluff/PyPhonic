@@ -4,6 +4,8 @@ import sys
 import threading
 import time
 
+import numpy as np
+
 from pyphonic.functions import _state
 from pyphonic.functions import *
 from pyphonic.midi_parser import parse_bytes_to_midi as _parse_bytes_to_midi
@@ -103,14 +105,16 @@ def shuffler(process_fn):
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
                 audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
+                if expects_npy:
+                    audio_in = np.array(audio_in, dtype=np.float32)
             except struct.error as e:
                 continue
             rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
             try:
-                if isinstance(rendered_audio, list):
+                if isinstance(rendered_audio, list) or isinstance(rendered_audio, tuple):
                     rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
                 else:
-                    rendered_audio = rendered_audio.flatten().tobytes()
+                    rendered_audio = np.float32(rendered_audio).flatten().tobytes()
                 rendered_midi = _parse_midi_to_bytes(rendered_midi)
                 rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
             except struct.error:
@@ -140,7 +144,9 @@ def responder(socket_):
             raise
 
 def start(process_fn, port=8015):
-    global in_buffer, out_buffer, seq_num
+    global in_buffer, out_buffer, seq_num, expects_npy
+    if process_fn.__name__.endswith('_npy'):
+        expects_npy = True
     while True:
         s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
