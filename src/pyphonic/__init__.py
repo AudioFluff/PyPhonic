@@ -10,6 +10,7 @@ from pyphonic.functions import _state
 from pyphonic.functions import *
 from pyphonic.midi_parser import parse_bytes_to_midi as _parse_bytes_to_midi
 from pyphonic.midi_parser import parse_midi_to_bytes as _parse_midi_to_bytes
+from pyphonic.midi_parser import MidiMessage
 
 all_threads = []
 should_stop = threading.Event()
@@ -147,6 +148,8 @@ def start(process_fn, port=8015):
     global in_buffer, out_buffer, seq_num, expects_npy
     if process_fn.__name__.endswith('_npy'):
         expects_npy = True
+    else:
+        expects_npy = False
     while True:
         s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
