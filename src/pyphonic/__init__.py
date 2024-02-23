@@ -117,7 +117,8 @@ def shuffler(process_fn):
                 else:
                     rendered_audio = np.float32(rendered_audio).flatten().tobytes()
                 rendered_midi = _parse_midi_to_bytes(rendered_midi)
-                rendered_midi = rendered_midi[:100] + b'0' * (100 - len(rendered_midi))
+                
+                rendered_midi = rendered_midi[:100] + b'\0' * (100 - len(rendered_midi))
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (_state.block_size*_state.num_channels)
