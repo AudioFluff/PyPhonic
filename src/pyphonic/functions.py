@@ -1,3 +1,8 @@
+import os
+from pathlib import Path
+import platform
+import platformdirs
+
 class _State:
     """State of the audio engine"""
     sample_rate = 44100
@@ -79,3 +84,20 @@ def getSignalStats():
         "max": _state.max,
         "rms": _state.rms
     }
+
+def getDataDir():
+    """
+    Returns the directory where Pyphonic can store data. This is a directory
+    that is guaranteed to be writable by the plugin, and is unique to the
+    current user. This is useful for storing samples, presets, and other
+    user-specific data.
+    """
+    dir_ = Path(platformdirs.user_data_dir("PyPhonic", "DeepestDarkest", roaming=True))
+    if "WSL" in platform.platform():
+        paths = os.environ.get("PATH", "").split(":")
+        for path in paths:
+            if "AppData" in path:
+                path = Path(path.split("AppData")[0])
+                dir_ = path / "AppData" / "Roaming" / "DeepestDarkest" / "PyPhonic"
+                dir_ = dir_.resolve()
+    return dir_

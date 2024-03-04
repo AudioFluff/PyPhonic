@@ -18,7 +18,7 @@ This library is (one implementation of) the server component.
 python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8020)"
 ```
 
-Or if you want to use `numpy`:
+Or if you want to use `numpy` (recommended):
 
 ```bash
 python -c "import pyphonic; from pyphonic.demo_numpy import process_npy;  pyphonic.start(process_npy, 8020)"
@@ -30,10 +30,9 @@ Enter `127.0.0.1:8020` in the VST and you'll hear synthesized tones for each MID
 
 ```python
 import pyphonic
-from pyphonic import state  # this is a dynamic object with e.g. `state.bpm`
 
 def process(midi, audio):
-    return audio
+    return midi, audio
 
 PORT = 8020
 pyphonic.start(process, PORT)
@@ -45,12 +44,11 @@ Enter the url http://127.0.0.1:8020 in the VST and voila, you have a perfectly u
 
 ```python
 import pyphonic
-from pyphonic import state
 
 def process(midi, audio):
-    if state.bpm > 140:
+    if pyphonic.getBPM() > 140:
         return [x * 1.1 for x in audio]
-    return [0.0] * len(audio)
+    return midi, [0.0] * len(audio)
 
 PORT = 8020
 pyphonic.start(process, PORT)
@@ -62,8 +60,15 @@ YMMV with network audio, particularly if you're running this server on a differe
 
 That's why the Pyphonic VST also provides the ability to then take the exact same Python code and run it _within the VST_. In other words, the remote setup is great for POC and debugging, the next step is to run it in the VST itself. (Optional third step is then to translate the Python code to C++ but that's on you).
 
-Remotely, you can use any third party Python lib installed in your environment (e.g. `PyTorch`). In the VST, currently, `numpy` and `scipy` are offered.
+Remotely, you can use any third party Python lib installed in your environment (e.g. `PyTorch`). In the VST, currently, `numpy`, `scipy`, and `librosa` (which includes `numba` and `scikit-learn`) are offered.
 
-## History
+## Docs
 
-There's been a 3 year gap between Pyphonic 0.9.1 and now. This time, it's much cleaner, and now the setup is reversed so the VST is no longer a server, instead it's a client transmitting to the Python server. Performance is much improved.
+## Included Demos
+
+1. `pyphonic.demo` / `pyphonic.demo_numpy` - a simple sine wave synth
+2. `pyphonic.arp` - a MIDI arpeggiator
+3. `pyphonic.butterworth` - a configurable high/low/bandpass filter
+4. `pyphonic.sampler` - a wavetable synth or "ROMpler", demonstrating pitch shifting
+5. `pyphonic.stretcher` - a time stretching wavetable synth
+6. (TODO) `pyphonic.saturator` - a saturator/distortion effect

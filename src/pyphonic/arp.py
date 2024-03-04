@@ -4,8 +4,8 @@ from pyphonic import MidiMessage
 timer = 0
 midibuf = {}
 initial_delay = 1
-duration = 10
-arp_delay = 40
+duration = 20
+arp_delay = 50
 
 def add_note(when, type, note, velocity, channel):
     global midibuf
