@@ -12,6 +12,10 @@ The VST streams audio and midi to some server; the server responds with some pro
 
 This library is (one implementation of) the server component.
 
+## Where do I get the VST?
+
+The VST is not yet released. It's in the final stages of development with release expected in April 2024. If you're interested in beta testing, please get in touch.
+
 ## Quickstart
 
 ##### Super Quick Demo

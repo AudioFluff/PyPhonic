@@ -11,5 +11,3 @@ A Python server for a VST plugin client.
    quickstart
    examples
    reference
-
-.. autofunction:: pyphonic.State

@@ -91,13 +91,15 @@ def getDataDir():
     that is guaranteed to be writable by the plugin, and is unique to the
     current user. This is useful for storing samples, presets, and other
     user-specific data.
+
+    On Windows this is typically C:\Users\<username>\AppData\Roaming\AudioFluff\PyPhonic
     """
-    dir_ = Path(platformdirs.user_data_dir("PyPhonic", "DeepestDarkest", roaming=True))
+    dir_ = Path(platformdirs.user_data_dir("PyPhonic", "AudioFluff", roaming=True))
     if "WSL" in platform.platform():
         paths = os.environ.get("PATH", "").split(":")
         for path in paths:
             if "AppData" in path:
                 path = Path(path.split("AppData")[0])
-                dir_ = path / "AppData" / "Roaming" / "DeepestDarkest" / "PyPhonic"
+                dir_ = path / "AppData" / "Roaming" / "AudioFluff" / "PyPhonic"
                 dir_ = dir_.resolve()
     return dir_

@@ -9,6 +9,7 @@ build-backend = "setuptools.build_meta"
 name = "pyphonic"
 version = "1.0.0"
 authors = [
+  { name="AudioFluff", email="tom@audiofluff.com" },
   { name="Tom Grek", email="tom.grek@gmail.com" },
 ]
 description = "Make a VST plugin for your DAW using Python"

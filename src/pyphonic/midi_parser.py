@@ -1,4 +1,17 @@
 class MidiMessage:
+    """A MIDI message.
+
+    Attributes:
+        type (str): The type of message: `note_on`, `note_off`, `control_change`, `pitch_wheel_change`.
+
+        note (int): The note number (if note_on/off) or control number (if control_change). Else garbage.
+
+        velocity (int): The velocity (if note_on/off) or control value/pitch wheel position (0-127).
+
+        channel (int): The channel number.
+        
+        description (str): A plain English description of the message.
+    """
     def __init__(self, type_, note, velocity, channel):
         self.type = type_
         self.note = note
