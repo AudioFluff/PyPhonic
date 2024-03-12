@@ -5,6 +5,7 @@ import threading
 import time
 
 import numpy as np
+import torch
 
 from pyphonic.functions import _state
 from pyphonic.functions import *
@@ -106,16 +107,20 @@ def shuffler(process_fn):
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
                 audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
-                if expects_npy:
+                if fn_expects == "npy":
                     audio_in = np.array(audio_in, dtype=np.float32)
+                elif fn_expects == "torch":
+                    audio_in = torch.tensor(audio_in, dtype=torch.float32).view((_state.num_channels, -1))
             except struct.error as e:
                 continue
             rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
             try:
                 if isinstance(rendered_audio, list) or isinstance(rendered_audio, tuple):
                     rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
-                else:
+                elif fn_expects == "npy":
                     rendered_audio = np.float32(rendered_audio).flatten().tobytes()
+                elif fn_expects == "torch":
+                    rendered_audio = rendered_audio.flatten().numpy().tobytes()
                 rendered_midi = _parse_midi_to_bytes(rendered_midi)
                 
                 rendered_midi = rendered_midi[:100] + b'\0' * (100 - len(rendered_midi))
@@ -146,11 +151,13 @@ def responder(socket_):
             raise
 
 def start(process_fn, port=8015):
-    global in_buffer, out_buffer, seq_num, expects_npy
+    global in_buffer, out_buffer, seq_num, fn_expects
     if process_fn.__name__.endswith('_npy'):
-        expects_npy = True
+        fn_expects = "npy"
+    elif process_fn.__name__.endswith('_torch'):
+        fn_expects = "torch"
     else:
-        expects_npy = False
+        fn_expects = "list"
     while True:
         s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
