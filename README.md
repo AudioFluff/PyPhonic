@@ -74,7 +74,7 @@ Remotely, you can use any third party Python lib installed in your environment (
 4. `pyphonic.sampler` - a wavetable synth or "ROMpler", demonstrating pitch shifting
 5. `pyphonic.stretcher` - a time stretching wavetable synth
 6. `pyphonic.torch_noise` - to be charitable, it adds a vinyl crackle or tape hiss to the audio
-7. (TODO) `pyphonic.saturator` - a saturator/distortion effect
+7. `pyphonic.torch_saturator` - a saturator/distortion effect, nice warmth on EDM drums
 8. (TODO) `pyphonic.reverb` - a reverb effect
 9. (TODO) `pyphonic.delay` - a beat sync'd delay effect
 10. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
@@ -96,6 +96,7 @@ In particular, the VST plugin automatically pulls `presets.json` and uses that t
 ### How to add to presets.json
 
 ```
-f = open('presets.json', 'r').read()
-json.dump(f, open("ready_to_copy_paste.json", "w"))
+import json
+f = open('my_python_file.py').read()
+json.dump(f, open("ready_to_copy_paste_into_presets.json", "w"))
 ```

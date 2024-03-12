@@ -1,3 +1,4 @@
 sphinxawesome_theme
 numpy
+platformdirs
 torch==2.2.1
