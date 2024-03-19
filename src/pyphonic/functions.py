@@ -92,7 +92,7 @@ def getDataDir():
     current user. This is useful for storing samples, presets, and other
     user-specific data.
 
-    On Windows this is typically C:\Users\<username>\AppData\Roaming\AudioFluff\PyPhonic
+    On Windows this is typically C:/Users/<username>/AppData/Roaming/AudioFluff/PyPhonic
     """
     dir_ = Path(platformdirs.user_data_dir("PyPhonic", "AudioFluff", roaming=True))
     if "WSL" in platform.platform():

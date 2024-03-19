@@ -3,6 +3,10 @@ import struct
 import sys
 import threading
 import time
+import traceback
+
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 import numpy as np
 import torch
@@ -44,7 +48,7 @@ def handle(socket_, addr):
             continue
         if not len(data):
             empty_receives += 1
-            if empty_receives > 100:
+            if empty_receives > 50:
                 print("Other end disconnected.")
                 should_stop.set()
             continue
@@ -113,7 +117,13 @@ def shuffler(process_fn):
                     audio_in = torch.tensor(audio_in, dtype=torch.float32).view((_state.num_channels, -1))
             except struct.error as e:
                 continue
-            rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
+            try:
+                rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
+            except:
+                traceback.print_exc()
+                print("Process function crashed, so will disconnect.")
+                should_stop.set()
+                sys.exit(1)
             try:
                 if isinstance(rendered_audio, list) or isinstance(rendered_audio, tuple):
                     rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
@@ -168,7 +178,19 @@ def start(process_fn, port=8015):
         safe_to_transmit.clear()
         in_buffer, out_buffer = [], []
         seq_num = 0
-        should_stop.clear()
+        should_stop.clear()        
+        
+        # Watch for file changes
+        class Handler(FileSystemEventHandler):
+            def on_modified(self, event):
+                print(f"{event.src_path} has been modified, so will disconnect.")
+                should_stop.set()
+                sys.exit(1)
+        observer = Observer()
+        observer.schedule(Handler(), path = process_fn.__code__.co_filename, recursive=False)
+        observer.start()
+        all_threads.append(observer)
+
         shuffle_thread = threading.Thread(target=shuffler, args=(process_fn, ))
         shuffle_thread.start()
         all_threads.append(shuffle_thread)
@@ -198,6 +220,7 @@ def start(process_fn, port=8015):
             print("Stopping listener...")
             if s:
                 s.close()
+            observer.stop()
             for t in all_threads:
                 t.join()
             print("Restarting listener in 1s. Ctrl-C to quit.")
