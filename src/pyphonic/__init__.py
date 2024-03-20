@@ -1,3 +1,4 @@
+import importlib
 import socket
 import struct
 import sys
@@ -225,4 +226,12 @@ def start(process_fn, port=8015):
                 t.join()
             print("Restarting listener in 1s. Ctrl-C to quit.")
             time.sleep(1)
+
+            try:
+                importlib.reload(sys.modules[process_fn.__module__])
+                process_fn = getattr(sys.modules[process_fn.__module__], process_fn.__name__)
+            except:
+                traceback.print_exc()
+                print("Process function crashed on reload, so will quit.")
+                sys.exit(1)
         
