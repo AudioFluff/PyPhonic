@@ -53,12 +53,8 @@ def handle(socket_, addr):
                 print("Other end disconnected.")
                 should_stop.set()
             continue
-
-        if b'EHLO' in data:
-            transmit(socket_, b'ok\n')
-            print(f"Received handshake from client.")
+        if b'AUDIO' in data:
             safe_to_transmit.set()
-        elif b'AUDIO' in data:
             global in_buffer
             global seq_num
             desired_length = 100000

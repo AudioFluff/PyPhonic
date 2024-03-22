@@ -1,21 +1,23 @@
+# fft
+# Ramped FFT-based filtering over the FFT bins specified as TAMPER_START and TAMPER_END
+
 import numpy as np
-from numpy.fft import rfft, irfft
 from scipy import signal
 
 import pyphonic
 
 BUF_SIZE = 8820
 
-stored_buffer_left = np.zeros((BUF_SIZE, ), dtype=np.float32) # or complex128
-stored_buffer_right = np.zeros((BUF_SIZE, ), dtype=np.float32) # or complex128
-output_buffer_left = np.zeros((BUF_SIZE, ), dtype=np.float32) # or complex128
-output_buffer_right = np.zeros((BUF_SIZE, ), dtype=np.float32) # or complex128
+stored_buffer_left = np.zeros((BUF_SIZE, ), dtype=np.float32)
+stored_buffer_right = np.zeros((BUF_SIZE, ), dtype=np.float32)
+output_buffer_left = np.zeros((BUF_SIZE, ), dtype=np.float32)
+output_buffer_right = np.zeros((BUF_SIZE, ), dtype=np.float32)
 
 read_stored, write_stored = 0, 0
 read_output, write_output = 0, 0
 started = False
 
-TAMPER_START, TAMPER_END = 0, 300
+TAMPER_START, TAMPER_END = 10, 40
 
 def wrapped_write(data, buf, ptr):
     data_len = data.shape[0]
@@ -37,7 +39,6 @@ def wrapped_read(read_len, buf, ptr):
     ptr %= BUF_SIZE
     return data, ptr
 
-
 def process_npy(midi, audio):
     global started
     global read_stored, write_stored, read_output, write_output
@@ -50,15 +51,13 @@ def process_npy(midi, audio):
     read_stored += pyphonic.getBlockSize()
     read_stored = read_stored % BUF_SIZE
 
-    f, t, Zxxfl = signal.stft(left, fs=pyphonic.getSampleRate(), nperseg=1024)#, noverlap=256)
+    f, t, Zxxfl = signal.stft(left, fs=pyphonic.getSampleRate(), nperseg=1024)
     Zxxfl[TAMPER_START:TAMPER_END] *= np.linspace(0, 1, TAMPER_END - TAMPER_START).reshape(-1, 1)
-    f2, t2, Zxxfr = signal.stft(right, fs=pyphonic.getSampleRate(), nperseg=1024)#, noverlap=256)
+    f2, t2, Zxxfr = signal.stft(right, fs=pyphonic.getSampleRate(), nperseg=1024)
     Zxxfr[TAMPER_START:TAMPER_END] *= np.linspace(0, 1, TAMPER_END - TAMPER_START).reshape(-1, 1)
 
-    _, ifl = signal.istft(Zxxfl, fs=pyphonic.getSampleRate(), nperseg=1024)#, noverlap=256)
-    _, ifr = signal.istft(Zxxfr, fs=pyphonic.getSampleRate(), nperseg=1024)#, noverlap=256)
-
-    #print(f[:20])
+    _, ifl = signal.istft(Zxxfl, fs=pyphonic.getSampleRate(), nperseg=1024)
+    _, ifr = signal.istft(Zxxfr, fs=pyphonic.getSampleRate(), nperseg=1024)
 
     _ = wrapped_write(ifl[pyphonic.getBlockSize()*2:pyphonic.getBlockSize()*3], output_buffer_left, write_output)
     write_output = wrapped_write(ifr[pyphonic.getBlockSize()*2:pyphonic.getBlockSize()*3], output_buffer_right, write_output)
