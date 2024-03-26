@@ -24,10 +24,17 @@ The VST is not yet released. It's in the final stages of development with releas
 python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8020)"
 ```
 
-Or if you want to use `numpy` (recommended):
+An example using NumPy (recommended over basic Python):
 
 ```bash
-python -c "import pyphonic; from pyphonic.demo_numpy import process_npy;  pyphonic.start(process_npy, 8020)"
+python -c "import pyphonic; from pyphonic.sampler import process_npy;  pyphonic.start(process_npy, 8020)"
+```
+
+An example using PyTorch:
+
+```bash
+python -c "import pyphonic; from pyphonic.torch_saturator import process_torch;  pyphonic.start(process_torch, 8020)"
+
 ```
 
 Enter `127.0.0.1:8020` in the VST and you'll hear synthesized tones for each MIDI note you press.
@@ -52,9 +59,10 @@ Enter the url http://127.0.0.1:8020 in the VST and voila, you have a perfectly u
 import pyphonic
 
 def process(midi, audio):
+    left, right = audio[0], audio[1]
     if pyphonic.getBPM() > 140:
-        return [x * 1.1 for x in audio]
-    return midi, [0.0] * len(audio)
+        return midi, [[x * 1.1 for x in left], [x * 1.1 for x in right]]
+    return midi, [[0.0 for _ in left], [0.0 for _ in right]]
 
 PORT = 8020
 pyphonic.start(process, PORT)
@@ -72,9 +80,9 @@ Remotely, you can use any third party Python lib installed in your environment (
 
 ## Included Demos
 
-1. `pyphonic.demo` / `pyphonic.demo_numpy` - a simple sine wave synth (
-2. `pyphonic.arp` - a beat sync'd minor triad MIDI arpeggiator (No need to convert to 2d array)
-3. `pyphonic.butterworth` - a configurable high/low/bandpass filter (DONE - convert to 2d array)
+1. `pyphonic.demo` - a simple polyphonic sine wave synth
+2. `pyphonic.arp` - a beat sync'd minor triad MIDI arpeggiator
+3. `pyphonic.butterworth` - a configurable high/low/bandpass filter
 4. `pyphonic.sampler` - a wavetable synth or "ROMpler", demonstrating pitch shifting
 5. `pyphonic.stretcher` - a time stretching wavetable synth
 6. `pyphonic.torch_noise` - to be charitable, it adds a vinyl crackle or tape hiss to the audio
