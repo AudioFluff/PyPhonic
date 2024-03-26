@@ -11,3 +11,4 @@ A Python server for a VST plugin client.
    quickstart
    examples
    reference
+   faq
