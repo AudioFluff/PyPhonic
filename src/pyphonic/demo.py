@@ -1,3 +1,6 @@
+# polysine
+# A simple polyphonic sine wave synthesizer
+
 import math
 import pyphonic
 
@@ -108,7 +111,7 @@ class Poly:
             if self.delay_position >= len(self.delay_buf):
                 self.delay_position = 0
 
-        return cur * 2 # mono
+        return cur
 
 poly = Poly()
 
@@ -125,4 +128,4 @@ def process(midi_messages, audio):
             print(m)
     
     render = poly.render()
-    return midi_messages, render
+    return midi_messages, [render, render] # stereo

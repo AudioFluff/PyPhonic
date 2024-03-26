@@ -72,9 +72,9 @@ Remotely, you can use any third party Python lib installed in your environment (
 
 ## Included Demos
 
-1. `pyphonic.demo` / `pyphonic.demo_numpy` - a simple sine wave synth
-2. `pyphonic.arp` - a beat sync'd minor triad MIDI arpeggiator
-3. `pyphonic.butterworth` - a configurable high/low/bandpass filter
+1. `pyphonic.demo` / `pyphonic.demo_numpy` - a simple sine wave synth (
+2. `pyphonic.arp` - a beat sync'd minor triad MIDI arpeggiator (No need to convert to 2d array)
+3. `pyphonic.butterworth` - a configurable high/low/bandpass filter (DONE - convert to 2d array)
 4. `pyphonic.sampler` - a wavetable synth or "ROMpler", demonstrating pitch shifting
 5. `pyphonic.stretcher` - a time stretching wavetable synth
 6. `pyphonic.torch_noise` - to be charitable, it adds a vinyl crackle or tape hiss to the audio

@@ -1,3 +1,6 @@
+# butterworth
+# Butterworth filter (High, Low, or Bandpass)
+
 import pyphonic
 
 import numpy as np
@@ -17,8 +20,8 @@ def process_npy(midi, audio):
         Zl = np.zeros((sos.shape[0], 2))
         Zr = np.zeros((sos.shape[0], 2))
         return midi, audio
-    left = audio[:audio.shape[0]//2]
-    right = audio[audio.shape[0]//2:]
+    left = audio[0]
+    right = audio[1]
     left, Zl = sosfilt(sos, left, zi=Zl)
     right, Zr = sosfilt(sos, right, zi=Zr)
-    return midi, np.concatenate((left, right))
+    return midi, np.stack((left, right))

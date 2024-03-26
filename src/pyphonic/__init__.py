@@ -108,8 +108,11 @@ def shuffler(process_fn):
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
                 audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
+                new_audio = []
+                for i in range(0, _state.num_channels):
+                    new_audio.append(audio_in[i*_state.block_size:(i+1)*_state.block_size])
                 if fn_expects == "npy":
-                    audio_in = np.array(audio_in, dtype=np.float32)
+                    audio_in = np.array(audio_in, dtype=np.float32).reshape((_state.num_channels, -1))
                 elif fn_expects == "torch":
                     audio_in = torch.tensor(audio_in, dtype=torch.float32).view((_state.num_channels, -1))
             except struct.error as e:
@@ -123,6 +126,7 @@ def shuffler(process_fn):
                 sys.exit(1)
             try:
                 if isinstance(rendered_audio, list) or isinstance(rendered_audio, tuple):
+                    rendered_audio = np.array(rendered_audio).flatten().tolist()
                     rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
                 elif fn_expects == "npy":
                     rendered_audio = np.float32(rendered_audio).flatten().tobytes()
