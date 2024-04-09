@@ -109,4 +109,4 @@ def getDataDir():
                 path = Path(path.split("AppData")[0])
                 dir_ = path / "AppData" / "Roaming" / "AudioFluff" / "PyPhonic"
                 dir_ = dir_.resolve()
-    return dir_
+    return str(dir_)

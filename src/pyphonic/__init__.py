@@ -115,10 +115,22 @@ def shuffler(process_fn):
                     audio_in = np.array(audio_in, dtype=np.float32).reshape((_state.num_channels, -1))
                 elif fn_expects == "torch":
                     audio_in = torch.tensor(audio_in, dtype=torch.float32).view((_state.num_channels, -1))
+                elif fn_expects == "list":
+                    if _state.num_channels == 1:
+                        audio_in = [audio_in]
+                    else:
+                        audio_in = [audio_in[:_state.block_size], audio_in[_state.block_size:]]
             except struct.error as e:
                 continue
             try:
-                rendered_midi, rendered_audio = wrapped_process_fn(_parse_bytes_to_midi(midi_in), audio_in)
+                midi_going_in = _parse_bytes_to_midi(midi_in)
+                retval = wrapped_process_fn(midi_going_in, audio_in)
+                rendered_midi, rendered_audio = retval
+            except TypeError:
+                traceback.print_exc()
+                print("Process function crashed, so will disconnect. Did it return a tuple of midi and audio?")
+                should_stop.set()
+                sys.exit(1)
             except:
                 traceback.print_exc()
                 print("Process function crashed, so will disconnect.")
