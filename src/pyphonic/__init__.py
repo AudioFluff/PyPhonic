@@ -108,9 +108,7 @@ def shuffler(process_fn):
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
                 audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
-                new_audio = []
-                for i in range(0, _state.num_channels):
-                    new_audio.append(audio_in[i*_state.block_size:(i+1)*_state.block_size])
+
                 if fn_expects == "npy":
                     audio_in = np.array(audio_in, dtype=np.float32).reshape((_state.num_channels, -1))
                 elif fn_expects == "torch":
