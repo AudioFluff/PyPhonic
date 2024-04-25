@@ -92,7 +92,7 @@ def handle(socket_, addr):
             content = data[content_start:]
             midi, audio = content[:100], content[100:]
             
-            if len(audio) != content_length - 100:
+            if False:#len(audio) != content_length - 100:
                 print("Not an error, just an early payload: ", len(audio), content_length, len(data))
                 continue
             else:
@@ -107,12 +107,14 @@ def shuffler(process_fn):
         while len(in_buffer) and not should_stop.is_set():
             seq_num, audio_in, midi_in = in_buffer.pop(0)
             try:
-                audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}f", audio_in)
+                audio_in = struct.unpack(f"<{_state.block_size*_state.num_channels}h", audio_in)
 
                 if fn_expects == "npy":
-                    audio_in = np.array(audio_in, dtype=np.float32).reshape((_state.num_channels, -1))
+                    audio_in = np.array(audio_in, dtype=np.int16).reshape((_state.num_channels, -1))
+                    audio_in = (audio_in / 32767.0).astype(np.float32)
                 elif fn_expects == "torch":
-                    audio_in = torch.tensor(audio_in, dtype=torch.float32).view((_state.num_channels, -1))
+                    audio_in = torch.tensor(audio_in, dtype=torch.int16).view((_state.num_channels, -1)) / 32767.0
+                    audio_in = audio_in.float()
                 elif fn_expects == "list":
                     if _state.num_channels == 1:
                         audio_in = [audio_in]
@@ -136,19 +138,19 @@ def shuffler(process_fn):
                 sys.exit(1)
             try:
                 if isinstance(rendered_audio, list) or isinstance(rendered_audio, tuple):
-                    rendered_audio = np.array(rendered_audio).flatten().tolist()
-                    rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
+                    rendered_audio = (np.array(rendered_audio) * 32767.0).astype(np.int16).flatten().tolist()
+                    rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}h", *rendered_audio)
                 elif fn_expects == "npy":
-                    rendered_audio = np.float32(rendered_audio).flatten().tobytes()
+                    rendered_audio = np.int16(rendered_audio * 32767.0).flatten()
+                    rendered_audio = rendered_audio.tobytes()
                 elif fn_expects == "torch":
-                    rendered_audio = rendered_audio.flatten().numpy().tobytes()
+                    rendered_audio = (rendered_audio.flatten().numpy() * 32767.0).astype(np.int16).tobytes()
                 rendered_midi = _parse_midi_to_bytes(rendered_midi)
-                
                 rendered_midi = rendered_midi[:100] + b'\0' * (100 - len(rendered_midi))
             except struct.error:
                 print("Audio length didn't match, returning silence this time.")
                 rendered_audio = [0.0] * (_state.block_size*_state.num_channels)
-                rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}f", *rendered_audio)
+                rendered_audio = struct.pack(f"{_state.block_size*_state.num_channels}h", *rendered_audio)
             except Exception as e:
                 print(f"Error {e}. Returned midi should be a list of pyphonic.MidiMessages.")
                 continue
