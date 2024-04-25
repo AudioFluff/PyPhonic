@@ -33,3 +33,11 @@ Unfortunately, no. PyTorch 2.2.0 doesn't support `torch.compile` with Python 3.1
 your code will throw an error. You can always upgrade the PyTorch version used by the VST using `python.exe -m pip` from a command
 prompt window, if they release an update. We will try to keep the VST up-to-date with the latest PyTorch version and are keenly watching
 developments here.
+
+8. How do I get best audio quality?
+
+In general, experiment with the latency (buffer size) in your DAW. Higher latencies mean larger buffers, so the amount of data moved in
+one go is more, and the overheads of moving it are comparatively less. However, it means the amount of data your code has to process
+in one go is also higher. So, you might have to experiment with the buffer size to get the best audio quality.
+
+For networked audio, choosing buffer sizes that are powers of 2 seems to work best (128 - 2.9ms at 44.1kHz, 256, 512, 1024 etc).
