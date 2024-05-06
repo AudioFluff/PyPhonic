@@ -42,13 +42,16 @@ def wrapped_read(read_len, buf, ptr):
 def process_npy(midi, audio):
     global started
     global read_stored, write_stored, read_output, write_output
+
+    num_channels, num_samples = audio.shape
+
     _ = wrapped_write(audio[0], stored_buffer_left, write_stored)
     write_stored = wrapped_write(audio[1], stored_buffer_right, write_stored)
 
     started = True
     left, _ = wrapped_read(2048, stored_buffer_left, read_stored)
     right, _ = wrapped_read(2048, stored_buffer_right, read_stored)
-    read_stored += pyphonic.getBlockSize()
+    read_stored += num_samples
     read_stored = read_stored % BUF_SIZE
 
     f, t, Zxxfl = signal.stft(left, fs=pyphonic.getSampleRate(), nperseg=1024)
@@ -59,11 +62,11 @@ def process_npy(midi, audio):
     _, ifl = signal.istft(Zxxfl, fs=pyphonic.getSampleRate(), nperseg=1024)
     _, ifr = signal.istft(Zxxfr, fs=pyphonic.getSampleRate(), nperseg=1024)
 
-    _ = wrapped_write(ifl[pyphonic.getBlockSize()*2:pyphonic.getBlockSize()*3], output_buffer_left, write_output)
-    write_output = wrapped_write(ifr[pyphonic.getBlockSize()*2:pyphonic.getBlockSize()*3], output_buffer_right, write_output)
+    _ = wrapped_write(ifl[num_samples*2:num_samples*3], output_buffer_left, write_output)
+    write_output = wrapped_write(ifr[num_samples*2:num_samples*3], output_buffer_right, write_output)
 
-    retval_left, _ = wrapped_read(pyphonic.getBlockSize(), output_buffer_left, read_output)
-    retval_right, read_output = wrapped_read(pyphonic.getBlockSize(), output_buffer_right, read_output)
+    retval_left, _ = wrapped_read(num_samples, output_buffer_left, read_output)
+    retval_right, read_output = wrapped_read(num_samples, output_buffer_right, read_output)
 
 
     return midi, np.stack([retval_left, retval_right])

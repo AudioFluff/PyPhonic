@@ -116,7 +116,8 @@ class Poly:
 poly = Poly()
 
 def process(midi_messages, audio):
-    poly.set_sample_rate_block_size(pyphonic.getSampleRate(), pyphonic.getBlockSize())
+    num_samples = len(audio[0])
+    poly.set_sample_rate_block_size(pyphonic.getSampleRate(), num_samples)
     for m in midi_messages:
         if m.type == "note_on":
             if m.note < 20:

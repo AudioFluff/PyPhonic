@@ -1,3 +1,6 @@
+# Noise
+# Just adds some configurable noise to the input audio
+
 import torch
 
 import pyphonic

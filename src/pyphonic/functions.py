@@ -26,28 +26,6 @@ def getSampleRate():
     """
     return _state.sample_rate
 
-def getBlockSize():
-    """
-    Returns the block size of the audio stream. This is the number of samples
-    per block of audio - each call to the process() function will contain this
-    many samples (per channel).
-    """
-    return _state.block_size
-
-def getNumChannels():
-    """
-    Returns the number of channels in the audio stream. This is typically 1 for
-    mono audio and 2 for stereo audio.
-
-    Currently, > 2 channels are not supported.
-
-    This is the `audio` input into your `process()` function. If the audio is mono, the right channel data will be all zeros.
-    The audio is always shaped as (num_channels, block_size).
-
-    Note that the shape of the audio returned by `process()` must match the shape of the audio input.
-    """
-    return _state.num_channels
-
 def getBPM():
     """
     Returns the current BPM (beats per minute) of the incoming data. This is

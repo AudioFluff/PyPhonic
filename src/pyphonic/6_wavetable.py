@@ -1,3 +1,6 @@
+# wavetable_synth
+# First builds wavetables from a sample by pitch shifting, then playable with MIDI.
+
 from pathlib import Path
 
 import pyphonic
@@ -20,12 +23,14 @@ for note in range(31, 103): # G1 to G7
     else:
         freq = noteToFreq(note)
         ratio = freq / 261.63
-    left = librosa.effects.time_stretch(sample[0], rate=ratio)
-    right = librosa.effects.time_stretch(sample[1], rate=ratio)
+    left = librosa.effects.pitch_shift(sample[0], sr=44100, n_steps=(note - 60))
+    right = librosa.effects.pitch_shift(sample[1], sr=44100, n_steps=(note - 60))
     joined = np.array([left, right])
     voices[note] = {"wave": joined, "position": 0, "playing": False, "velocity": 0}
 
 def process_npy(midi, audio):
+
+    num_channels, num_samples = audio.shape
 
     for msg in midi:
         if msg.note not in voices:
@@ -39,20 +44,22 @@ def process_npy(midi, audio):
         elif msg.type == "note_off":
             voices[msg.note]["position"] = 0
             voices[msg.note]["playing"] = False
+            # Could add some tail off instead of dead stop
     
-    new_audio = np.zeros((pyphonic.getNumChannels(), pyphonic.getBlockSize()))
+    new_audio = np.zeros((num_channels, num_samples))
 
     for voice, data in voices.items():
         if not data["playing"]:
             continue
         start_pos = data["position"] % data["wave"].shape[1]
-        end_pos = (start_pos + pyphonic.getBlockSize())
+        end_pos = (start_pos + num_samples)
         if end_pos >= data["wave"].shape[1]:
             end_pos = data["wave"].shape[1]
             new_audio[:, :end_pos - start_pos] += data["wave"][:, start_pos:end_pos]
             voices[voice]["position"] = 0
+            voices[voice]["playing"] = False
         else:
             new_audio += data["wave"][:, start_pos:end_pos] * (data["velocity"] / 127)
-            voices[voice]["position"] += pyphonic.getBlockSize()
+            voices[voice]["position"] += num_samples
     
     return midi, new_audio
