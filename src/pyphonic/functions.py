@@ -35,12 +35,19 @@ def getBPM():
 
 def getTransport():
     """
-    Returns the current transport state of the DAW. Properties are:
-    - sample_num: the current sample number
-    - bar: the current bar number
-    - beat: the current beat number
-    - ticks: the current tick number
-    - is_playing: whether the DAW is currently playing
+    Returns the current transport state of the DAW.
+
+    Attributes of the returned dict: 
+        ``sample_num``: the current sample number
+
+        ``bar``: the current bar number
+
+        ``beat``: the current beat number
+
+        ``ticks``: the current tick number
+
+        ``is_playing``: whether the DAW is currently playing
+
     """
     return {
         "sample_num": _state.sample_num,
@@ -52,10 +59,14 @@ def getTransport():
 
 def getSignalStats():
     """
-    Returns the current signal statistics of the incoming audio. Properties are:
-    - min: the minimum value of the audio signal
-    - max: the maximum value of the audio signal
-    - rms: the root mean square value of the audio signal
+    Returns the current signal statistics of the incoming audio.
+    
+    Attributes of the returned dict:
+        ``min``: the minimum value of the audio signal
+
+        ``max``: the maximum value of the audio signal
+
+        ``rms``: the root mean square value of the audio signal
 
     Note that stats are calculated over the audio as a whole, not per-channel -
     in other words, the max is the highest value whether left or right. The
@@ -77,7 +88,7 @@ def getDataDir():
     current user. This is useful for storing samples, presets, and other
     user-specific data.
 
-    On Windows this is typically C:/Users/<username>/AppData/Roaming/AudioFluff/PyPhonic
+    On Windows this is typically ``C:/Users/<username>/AppData/Roaming/AudioFluff/PyPhonic``
     """
     dir_ = Path(platformdirs.user_data_dir("PyPhonic", "AudioFluff", roaming=True))
     if "WSL" in platform.platform():

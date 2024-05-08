@@ -19,7 +19,8 @@ version = release = '1.0.0'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
