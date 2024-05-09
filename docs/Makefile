@@ -9,6 +9,9 @@ default: html
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+watch:
+	sphinx-autobuild ../docs ../docs/_build/html
+
 .PHONY: help Makefile default
 
 # Catch-all target: route all unknown targets to Sphinx using the new

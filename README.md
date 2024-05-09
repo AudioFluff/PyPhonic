@@ -14,7 +14,7 @@ This library is (one implementation of) the server component.
 
 ## Where do I get the VST?
 
-The VST is not yet released. It's in the final stages of development with release expected in April 2024. If you're interested in beta testing, please get in touch.
+The VST is not yet released. It's in the final stages of development with release expected in May 2024; you can sign up at https://audiofluff.com to get notified when it's released.
 
 ## Quickstart
 
@@ -97,7 +97,7 @@ Remotely, you can use any third party Python lib installed in your environment (
 
 The VST is fully functional, rarely crashes, and stays quite performant even under heavy load. Before releasing it (hopefully to the KVR community), I need to 1. make a few more presets that push performance boundaries and check edge cases - dogfooding, basically - 2. write more docs and 3. make a Windows installer. A Mac installer will follow (and Linux if there's interest).
 
-As at mid-March 2024 I reckon this could be by April 2024.
+As at early May 2024 I reckon this should be this month.
 
 ## Development
 
