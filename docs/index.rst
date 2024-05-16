@@ -19,6 +19,7 @@ PyPhonic works two ways,
    :caption: Contents
 
    quickstart
+   vstguide
    examples
    reference
    faq

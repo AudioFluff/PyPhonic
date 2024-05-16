@@ -79,7 +79,7 @@ Note that the MIDI messages returned by your code are displayed in the VST.
 Installation
 ------------
 
-The Windows installer takes care of everything, just load up your DAW and a new VST3 will be listed. The libraries `librosa`, `numpy`, `torch`, `torchaudio`, `transformers`, and `scipy` are automatically installed into the Python environment as part of the installation. `librosa` also pulls in `numba` and `scikit-learn`. The `pyphonic` library is also there too, it's a native part of the plugin. If you want to use other libraries, you can install them using `pip`, but be sure to ``python -m pip`` using the Python included in the distribution (it's in the folder `python312` in the installation directory).
+The Windows installer takes care of everything, just load up your DAW and a new VST3 will be listed. The libraries `librosa`, `numpy`, `torch`, `torchaudio`, `transformers`, and `scipy` are automatically installed into the Python environment as part of the installation. `librosa` also pulls in `numba` and `scikit-learn`. The `pyphonic` library is also there too, it's a native part of the plugin. If you want to use other libraries, you can install them using `pip`, but be sure to ``python -m pip`` using the Python included in the distribution (it's in the folder `python312` in the installation directory - which will show up during the install, but is likely `c:\Program Files (x86)\PyPhonic`).
 
 To stream over the network and back to the VST, ``pip install pyphonic``.
 
