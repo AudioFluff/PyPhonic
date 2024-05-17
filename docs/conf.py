@@ -6,11 +6,11 @@ sys.path.insert(0, os.path.abspath('../src'))
 # -- Project information -----------------------------------------------------
 
 project = 'PyPhonic'
-author = 'Tom Grek'
+author = 'Audio Fluff'
 copyright = "2024, " + author
 
 # The full version, including alpha/beta/rc tags
-version = release = '1.0.0'
+version = release = '1.0.2'
 
 # -- General configuration ---------------------------------------------------
 
@@ -54,13 +54,13 @@ html_theme_options = {}
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_theme_options = {
-    "source_repository": "https://github.com/tomgrek/pyphonic",
+    "source_repository": "https://github.com/audiofluff/pyphonic",
     "source_branch": "main",
     "source_directory": "docs/",
 }
 
 # The URL which points to the root of the HTML documentation.
 # It is used to indicate the location of document like canonical_url
-html_baseurl = 'https://pyphonic.net'
+html_baseurl = 'https://audiofluff.github.io/PyPhonic/'
 
 html_logo = html_favicon = '_images/sphinx-notes.png'

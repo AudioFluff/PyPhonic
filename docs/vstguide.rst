@@ -65,7 +65,22 @@ Presets are saved as `.py` files in the PyPhonic data directory. The save locati
 
 13. Drop Samples
 
-You can drop .wav or .mp3 files here. Samples will be saved as `.npy` files in the PyPhonic data directory which can be accessed with ``pyphonic.getDataDir()`` (same folder whether you're running networked - on localhost of course - or embedded/local). Again, on Windows, this is typically ``C:\Users\<username>\AppData\Roaming\AudioFluff\PyPhonic``.
+You can drop .wav or .mp3 files here. Samples will be saved as `.pkl` files in the PyPhonic data directory which can be accessed with ``pyphonic.getDataDir()`` (same folder whether you're running networked - on localhost of course - or embedded/local). Again, on Windows, this is typically ``C:\Users\<username>\AppData\Roaming\AudioFluff\PyPhonic``.
+
+The pickle - a NumPy array - will be of shape `(num_channels, num_samples)`. You can load the sample with Pickle or NumPy:
+
+.. code-block:: python
+
+    import pickle
+    with open(f'{pyphonic.getDataDir()}/<filename>.pkl', 'rb') as f:
+        sample = pickle.load(f)
+    
+    # or
+
+    import numpy as np
+    sample = np.load(f'{pyphonic.getDataDir()}/<filename>.pkl', allow_pickle=True)
+
+Added samples (any ``.pkl`` files in the PyPhonic data directory) will be present in the dropdown. If you select one, the code to load it will be added to the code box (14). This is a helpful utility if you're building a wavetable synth or sampler, for example.
 
 14. Code Box
 
