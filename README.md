@@ -1,12 +1,12 @@
 # Pyphonic
 
-![Publish workflow](https://github.com/tomgrek/pyphonic/actions/workflows/python-publish.yml/badge.svg) ![Docs workflow](https://github.com/tomgrek/pyphonic/actions/workflows/pages-publish.yml/badge.svg) 
+![Publish workflow](https://github.com/AudioFluff/PyPhonic/actions/workflows/python-publish.yml/badge.svg) ![Docs workflow](https://github.com/AudioFluff/PyPhonic/actions/workflows/pages-publish.yml/badge.svg) 
 
 This is the Python library for the Pyphonic VST plugin.
 
 ![Plugin screenshot](docs/plugin_standalone.png)
 
-Docs: https://tomgrek.github.io/pyphonic/
+Docs: https://audiofluff.github.io/PyPhonic/
 
 The VST streams audio and midi to some server; the server responds with some processed audio.
 
@@ -14,30 +14,30 @@ This library is (one implementation of) the server component.
 
 ## Where do I get the VST?
 
-The VST is not yet released. It's in the final stages of development with release expected in May 2024; you can sign up at https://audiofluff.com to get notified when it's released.
+The VST is not yet released. It's in the final stages of development with release _definitely happening_ in June 2024; you can sign up at https://audiofluff.com to get notified when it's released.
 
 ## Quickstart
 
 ##### Super Quick Demo
 
 ```bash
-python -c "import pyphonic; from pyphonic.demo import process;  pyphonic.start(process, 8020)"
+python -c "import pyphonic; from pyphonic.preset_11_polysynth import process;  pyphonic.start(process, 8020)"
 ```
 
 An example using NumPy (recommended over basic Python):
 
 ```bash
-python -c "import pyphonic; from pyphonic.sampler import process_npy;  pyphonic.start(process_npy, 8020)"
+python -c "import pyphonic; from pyphonic.preset_7_sampler import process_npy;  pyphonic.start(process_npy, 8020)"
 ```
 
 An example using PyTorch:
 
 ```bash
-python -c "import pyphonic; from pyphonic.torch_saturator import process_torch;  pyphonic.start(process_torch, 8020)"
+python -c "import pyphonic; from pyphonic.preset_9_saturator import process_torch;  pyphonic.start(process_torch, 8020)"
 
 ```
 
-Enter `127.0.0.1:8020` in the VST and you'll hear synthesized tones for each MIDI note you press.
+Enter `127.0.0.1:8020` in the VST. Preset 11 sends notes in response to MIDI; preset 7 plays a sample in response to MIDI; preset 9 adds saturation to incoming audio.
 
 ##### Here's an example that simply echoes back the audio received from the server:
 
@@ -68,6 +68,18 @@ PORT = 8020
 pyphonic.start(process, PORT)
 ```
 
+##### Here's an example of NumPy
+
+```python
+import pyphonic
+
+def process_npy(midi, audio):
+    return [], audio * 0.5
+
+PORT = 8020
+pyphonic.start(process_npy, PORT)
+```
+
 ## Next Steps
 
 YMMV with network audio, particularly if you're running this server on a different computer than the VST.
@@ -80,24 +92,31 @@ Remotely, you can use any third party Python lib installed in your environment (
 
 ## Included Demos
 
-1. `pyphonic.demo` - a simple polyphonic sine wave synth
-2. `pyphonic.arp` - a beat sync'd minor triad MIDI arpeggiator
-3. `pyphonic.butterworth` - a configurable high/low/bandpass filter
-4. `pyphonic.sampler` - a wavetable synth or "ROMpler", demonstrating pitch shifting
-5. `pyphonic.stretcher` - a time stretching wavetable synth
-6. `pyphonic.torch_noise` - to be charitable, it adds a vinyl crackle or tape hiss to the audio
-7. `pyphonic.torch_saturator` - a saturator/distortion effect, nice warmth on EDM drums
-8. (TODO) `pyphonic.reverb` - a reverb effect
-9. (TODO) `pyphonic.delay` - a beat sync'd delay effect
-10. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
-11. (TODO) `pyphonic.deverb` - A deep learning model trained to remove reverb
-12. (TODO) `pyphonic.source_separation` - A [deep learning model](https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html#sphx-glr-tutorials-hybrid-demucs-tutorial-py) trained to separate music into drums, bass, vocals and other
+Note: You will need to look at these files to see if they have a `process`, `process_npy` or `process_torch` function and use it accordingly.
+
+4. `pyphonic.preset_4_butterworth` - a configurable high/low/bandpass filter
+5. `pyphonic.preset_5_midiarp` - a beat sync'd minor triad MIDI arpeggiator
+6. `pyphonic.preset_6_wavetable` - a wavetable synth or "ROMpler", demonstrating pitch shifting
+7. `pyphonic.preset_7_sampler` - a time stretching wavetable synth
+8. `pyphonic.preset_8_noise` - to be charitable, it adds a vinyl crackle or tape hiss to the audio
+9. `pyphonic.preset_9_saturator` - a saturator/distortion effect, nice warmth on EDM drums; also has an electric guitar setting
+10. `pyphonic.preset_10_fftramp` - Ramped FFT-based filtering, interesting effect.
+11. `pyphonic.preset_11_polysynth` - a simple polyphonic sine wave synth
+12. `pyphonic.preset_12_syncdnoise` - beat sync'd noise showing how to get transport info. Can add fizz after a kick.
+13. `pyphonic.preset_13_sccompressor` - fake sidechain compressor, ducking the audio on the kick
+14. `pyphonic.preset_14_nn_voice_change` - uses the SpeechT5 model and HifiGAN vocoder to transform one voice (vocal) to sound like a different speaker. Needs Huggingface and CUDA.
+
+15. (TODO) `pyphonic.reverb` - a reverb effect
+16. (TODO) `pyphonic.delay` - a beat sync'd delay effect
+17. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
+18. (TODO) `pyphonic.deverb` - A deep learning model trained to remove reverb
+19. (TODO) `pyphonic.source_separation` - A [deep learning model](https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html#sphx-glr-tutorials-hybrid-demucs-tutorial-py) trained to separate music into drums, bass, vocals and other
 
 ## Status
 
 The VST is fully functional, rarely crashes, and stays quite performant even under heavy load. Before releasing it (hopefully to the KVR community), I need to 1. make a few more presets that push performance boundaries and check edge cases - dogfooding, basically - 2. write more docs and 3. make a Windows installer. A Mac installer will follow (and Linux if there's interest).
 
-As at early May 2024 I reckon this should be this month.
+As at late May 2024 the release will firmly be in June 2024.
 
 ## Development
 

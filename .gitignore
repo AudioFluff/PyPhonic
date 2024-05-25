@@ -3,3 +3,5 @@ dist/
 build/
 **/__pycache__
 docs/_build/
+.vscode/
+.ipynb_checkpoints/
