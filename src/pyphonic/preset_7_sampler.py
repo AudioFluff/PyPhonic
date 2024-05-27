@@ -45,7 +45,7 @@ def process_npy(midi, audio):
             voices[msg.note]["position"] = 0
             voices[msg.note]["playing"] = False
     
-    new_audio = np.zeros((num_samples, num_channels))
+    new_audio = np.zeros((num_samples, num_channels), dtype=np.float32)
 
     for voice, data in voices.items():
         if not data["playing"]:
