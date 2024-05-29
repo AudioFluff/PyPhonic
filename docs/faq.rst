@@ -54,9 +54,14 @@ Left and right channels always have the same number of samples.
 
 10. Does my returned audio have to be the same shape as the input?
 
-Yes.
+Yes. And the same type, too - Python floats, NumPy float32, or Torch float32 depending on your `process` function.
 
 11. Does my returned MIDI have to be the same shape as the input?
 
 No, it can be an empty list (`[]`) or up to 33 messages long (one MIDI message is 3 bytes and we provided for up to 100 bytes per call to `process`. That means
 up to 33 note on/note off, parameter changes etc per few milliseconds).
+
+12. Why does PyPhonic come as two VSTs? What are PyPhonic_Instrument and PyPhonic_Effect?
+
+One's a VST instrument and the other is an effect. The effect can still accept, and generate, MIDI, but you might find configuring it in your DAW more of a challenge. Only the
+effect can be used as an insert/send effect.

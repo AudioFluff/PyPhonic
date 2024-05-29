@@ -105,18 +105,18 @@ Note: You will need to look at these files to see if they have a `process`, `pro
 12. `pyphonic.preset_12_syncdnoise` - beat sync'd noise showing how to get transport info. Can add fizz after a kick.
 13. `pyphonic.preset_13_sccompressor` - fake sidechain compressor, ducking the audio on the kick
 14. `pyphonic.preset_14_nn_voice_change` - uses the SpeechT5 model and HifiGAN vocoder to transform one voice (vocal) to sound like a different speaker. Needs Huggingface and CUDA.
-
-15. (TODO) `pyphonic.reverb` - a reverb effect
-16. (TODO) `pyphonic.delay` - a beat sync'd delay effect
-17. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
-18. (TODO) `pyphonic.deverb` - A deep learning model trained to remove reverb
-19. (TODO) `pyphonic.source_separation` - A [deep learning model](https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html#sphx-glr-tutorials-hybrid-demucs-tutorial-py) trained to separate music into drums, bass, vocals and other
+15. `pyphonic.preset_15_gen_midi` - generates a new MIDI chord every 2 bars with a configurable root note but based on the familiar C, G, Am, F progression. DAW must be playing/recording for it to work.
+16. (TODO) `pyphonic.reverb` - a reverb effect
+17. (TODO) `pyphonic.delay` - a beat sync'd delay effect
+18. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
+19. (TODO) `pyphonic.deverb` - A deep learning model trained to remove reverb
+20. (TODO) `pyphonic.source_separation` - A [deep learning model](https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html#sphx-glr-tutorials-hybrid-demucs-tutorial-py) trained to separate music into drums, bass, vocals and other
 
 ## Status
 
-The VST is fully functional, rarely crashes, and stays quite performant even under heavy load. Before releasing it (hopefully to the KVR community), I need to 1. make a few more presets that push performance boundaries and check edge cases - dogfooding, basically - 2. write more docs and 3. make a Windows installer. A Mac installer will follow (and Linux if there's interest).
+The VST is fully functional, hardly ever crashes the DAW, and stays quite performant even under heavy load.
 
-As at late May 2024 the release will firmly be in June 2024.
+As at late May 2024 the release will firmly be in June 2024. Just a few scary things to do like forming an LLC.
 
 ## Development
 
