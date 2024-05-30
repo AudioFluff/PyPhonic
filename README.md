@@ -105,7 +105,7 @@ Note: You will need to look at these files to see if they have a `process`, `pro
 12. `pyphonic.preset_12_syncdnoise` - beat sync'd noise showing how to get transport info. Can add fizz after a kick.
 13. `pyphonic.preset_13_sccompressor` - fake sidechain compressor, ducking the audio on the kick
 14. `pyphonic.preset_14_nn_voice_change` - uses the SpeechT5 model and HifiGAN vocoder to transform one voice (vocal) to sound like a different speaker. Needs Huggingface and CUDA.
-15. `pyphonic.preset_15_gen_midi` - generates a new MIDI chord every 2 bars with a configurable root note but based on the familiar C, G, Am, F progression. DAW must be playing/recording for it to work.
+15. `pyphonic.preset_15_gen_midi` - generates a new MIDI chord every 2 bars with a configurable root note but based on the familiar C, G, Am, F progression. Markovian. DAW must be playing/recording for it to work.
 16. (TODO) `pyphonic.reverb` - a reverb effect
 17. (TODO) `pyphonic.delay` - a beat sync'd delay effect
 18. (TODO) `pyphonic.pitcher` - a realtime pitch shift and time stretch effect for audio
