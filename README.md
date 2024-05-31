@@ -124,6 +124,10 @@ Contributions welcome!
 
 In particular, the VST plugin automatically pulls `presets.json` and uses that to populate the presets dropdown. If you come up with a great preset and want to share it, please consider making a pull request.
 
+## License
+
+This Python package is licensed under the MIT license. The VST plugin is under separate license.
+
 ### How to add to presets.json
 
 ```
