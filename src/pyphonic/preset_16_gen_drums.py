@@ -55,7 +55,8 @@ def process_midi(midi):
             midi_notes[msg.note] = True
         elif msg.type == "note_off":
             midi_notes[msg.note] = False
-        else:
+        elif msg.type == "channel_pressure":
+            print(f"New pattern {msg.note}")
             generate_pattern(msg.note)
     return None
 def generate_perc():

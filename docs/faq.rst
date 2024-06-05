@@ -65,3 +65,9 @@ up to 33 note on/note off, parameter changes etc per few milliseconds).
 
 One's a VST instrument and the other is an effect. The effect can still accept, and generate, MIDI, but you might find configuring it in your DAW more of a challenge. Only the
 effect can be used as an insert/send effect.
+
+13. How do I communicate across multiple PyPhonic instances?
+
+Any global variables instantiated in one instance of the VST will be available in other instances of the VST, and vice versa. They are shared. If instances are running the same code
+or refer to variables which have the same name that are _not_ only used in the `process` function, this can be confusing, you may want to namespace them (e.g. give each instance its
+own dataclass with those variables, or just change the names).

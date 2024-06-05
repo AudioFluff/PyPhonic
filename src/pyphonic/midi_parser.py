@@ -39,7 +39,7 @@ def parse_bytes_to_midi(midi_bytes):
         elif status_byte == 0xC0:
             message_type = "program_change"
         elif status_byte == 0xD0:
-            message_type = "channel_aftertouch"
+            message_type = "channel_pressure"
         elif status_byte == 0xE0:
             message_type = "pitch_wheel_change"
         else:

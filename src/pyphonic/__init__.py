@@ -24,6 +24,7 @@ safe_to_transmit = threading.Event()
 
 in_buffer, out_buffer = [], []
 seq_num = 0
+num_fails = 0
 block_size = 44100, 441
 
 def transmit(socket, b: bytes):
@@ -38,9 +39,11 @@ def handle(socket_, addr):
     global cache
     global cacheidx
     global block_size
+    global num_fails
 
     next_recv_size = None
     empty_receives = 0
+    num_fails = 0
     while not should_stop.is_set():
         try:
             data = bytearray(socket_.recv(next_recv_size or 100).strip())
@@ -94,6 +97,9 @@ def handle(socket_, addr):
             
             if len(audio) != content_length - 100:
                 print("Not an error, just an early payload: ", len(audio), content_length, len(data))
+                num_fails += 1
+                if num_fails > 10:
+                    should_stop.set()
                 continue
             else:
                 in_buffer.append((seq_num, audio, midi))
