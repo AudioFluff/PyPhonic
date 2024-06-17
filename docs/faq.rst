@@ -1,7 +1,7 @@
 FAQ
 =====
 
-1. Can it use Python threads or asyncio?
+1. Can it use Python threads?
 
 Yes to both. Performance gains might be limited because of the GIL but this can be improved by using NumPy and PyTorch.
 
@@ -23,10 +23,11 @@ Yes they do and can really run in parallel.
 It streams 32 bit floats. We found that the performance gains from int16 were negligible when running on localhost, in fact the overhead
 in converting resulted in worse performance.
 
-6. Does it support PyTorch JIT?
+6. Does it support PyTorch JIT / TorchScript?
 
 Yes, but you'll have to write the Python wrapper code. We thought about having first class support in the VST for drag-n-dropping checkpoints,
-but it seems PyTorch is moving more towards `torch.compile`.
+but it seems PyTorch is moving more towards `torch.compile`, plus not everything in PyTorch can be jit-compiled. If your main goal is to run
+TorchScript models in the DAW, try `Neutone FX <https://neutone.ai/fx>`_.
 
 7. Does it support `torch.compile`?
 
@@ -71,3 +72,8 @@ effect can be used as an insert/send effect.
 Any global variables instantiated in one instance of the VST will be available in other instances of the VST, and vice versa. They are shared. If instances are running the same code
 or refer to variables which have the same name that are _not_ only used in the `process` function, this can be confusing, you may want to namespace them (e.g. give each instance its
 own dataclass with those variables, or just change the names).
+
+14. Can the `process` function be async? Can I use `asyncio`?
+
+You can use `asyncio`, but your process function must be synchronous not `async def`. Depending what you're doing this means that a single PyPhonic VST instance might benefit
+from async, but multiple instances will not yield control to each other. The thinking was that since they're likely tied up doing math, async would not be much use.

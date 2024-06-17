@@ -1,5 +1,5 @@
 # Generative drum machine
-# Outputs MIDI (C3-G3) to pipe to a sampler. Hold one or all of those notes down, press play.
+# Outputs MIDI (C3-G3); pipe it to a sampler. Hold one or all of those notes down, press play. Mod wheel or C4/D4 moves up and down through patterns.
 
 import random
 
@@ -12,6 +12,7 @@ generated_patterns = {}
 start = None
 last_bar = -1
 last_quarter = -1
+current_pattern_number = 0
 
 instruments = {
     "kick": 60,
@@ -48,16 +49,22 @@ open_hat_patterns = [
 
 def is_note_on(note):
     return midi_notes[note]
+
 def process_midi(midi):
     global midi_notes
     for msg in midi:
         if msg.type == "note_on":
-            midi_notes[msg.note] = True
+            if msg.note == 72:
+                generate_pattern(current_pattern_number - 1)
+            elif msg.note == 74:
+                generate_pattern(current_pattern_number + 1)
+            else:
+                midi_notes[msg.note] = True
         elif msg.type == "note_off":
             midi_notes[msg.note] = False
-        elif msg.type == "channel_pressure":
-            print(f"New pattern {msg.note}")
-            generate_pattern(msg.note)
+        elif msg.type == "control_change" and msg.note == 1:
+            generate_pattern(msg.velocity)
+
     return None
 def generate_perc():
     i = 0
@@ -71,7 +78,8 @@ def generate_perc():
         i += next_
     return perc
 def generate_pattern(num):
-    global current_pattern
+    global current_pattern, current_pattern_number
+    num = max(0, min(127, num))
     if generated_patterns.get(num):
         current_pattern = generated_patterns[num]
     else:
@@ -83,7 +91,8 @@ def generate_pattern(num):
             "perc": generate_perc(),
         }
         generated_patterns[num] = current_pattern
-
+    print(f"Switching to pattern {num}")
+    current_pattern_number = num
     return current_pattern
 def play_pattern(cur_16th):
     global current_pattern
@@ -96,7 +105,7 @@ def play_pattern(cur_16th):
                 midi_out.append(MidiMessage("note_on", instruments[hit], 0, 0))
     return midi_out
 
-generate_pattern(0)
+generate_pattern(current_pattern_number)
 
 def get_16th():
     global start, last_bar, last_quarter
@@ -117,14 +126,9 @@ def get_16th():
     last_quarter = quarter
     return num_16
 
-
 def process(midi, audio):
     global start, last_bar, last_quarter
-    
     process_midi(midi)
-
     num_16 = get_16th()
-    
     midi_out = play_pattern(num_16)
-
     return midi_out, audio
