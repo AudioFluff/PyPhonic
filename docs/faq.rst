@@ -77,3 +77,16 @@ own dataclass with those variables, or just change the names).
 
 You can use `asyncio`, but your process function must be synchronous not `async def`. Depending what you're doing this means that a single PyPhonic VST instance might benefit
 from async, but multiple instances will not yield control to each other. The thinking was that since they're likely tied up doing math, async would not be much use.
+
+15. Why does Chrome/my browser warn me of an unsafe download? Why does Windows SmartScreen warn when I try to run the installer?
+
+At least part of the reason is that the executable is not signed. Code signing is, in our opinion, totally overpriced and a bit of a racket. If PyPhonic gets so popular that the fee is trivial,
+or if 30 people write to say they'll buy it but only if it's signed, we will do it, but not before then.
+
+You can dismiss the warnings. We are sorry they're there and hope they don't undermine your trust in Audio Fluff or PyPhonic.
+
+16. What is the activation process for PyPhonic? Does it use [insert hated DRM here]?
+
+When you buy PyPhonic you get a link to download, which includes a unique code similar to a license key. However, the code is only needed for the download; once you have the installer
+there is no activation process, and there is no copy protection.
+
