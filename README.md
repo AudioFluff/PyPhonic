@@ -115,9 +115,7 @@ Note: You will need to look at these files to see if they have a `process`, `pro
 
 ## Status
 
-The VST is fully functional, hardly ever crashes the DAW, and stays quite performant even under heavy load.
-
-As at late May 2024 the release will firmly be in June 2024. Just a few scary things to do like forming an LLC.
+The PyPhonic VST has been released! You can buy it on [KVR Audio](https://www.kvraudio.com/product/pyphonic-by-audio-fluff).
 
 ## Development
 
