@@ -127,6 +127,41 @@ class Synth:
         elif type_ == "laser":
             ramp = np.logspace(0, 2 * np.pi, fs)
             val = np.sin(ramp * hz)
+        elif type_ == "randomwalk":
+            reps = int(fs // hz)
+            from scipy.signal import savgol_filter
+            def bounded_random_walk(length, lower_bound,  upper_bound, start, end, std):
+                assert (lower_bound <= start and lower_bound <= end)
+                assert (start <= upper_bound and end <= upper_bound)
+
+                bounds = upper_bound - lower_bound
+
+                rand = (std * (np.random.random(length) - 0.5)).cumsum()
+                rand_trend = np.linspace(rand[0], rand[-1], length)
+                rand_deltas = (rand - rand_trend)
+                rand_deltas /= np.max([1, (rand_deltas.max()-rand_deltas.min())/bounds])
+
+                trend_line = np.linspace(start, end, length)
+                upper_bound_delta = upper_bound - trend_line
+                lower_bound_delta = lower_bound - trend_line
+
+                upper_slips_mask = (rand_deltas-upper_bound_delta) >= 0
+                upper_deltas =  rand_deltas - upper_bound_delta
+                rand_deltas[upper_slips_mask] = (upper_bound_delta - upper_deltas)[upper_slips_mask]
+
+                lower_slips_mask = (lower_bound_delta-rand_deltas) >= 0
+                lower_deltas =  lower_bound_delta - rand_deltas
+                rand_deltas[lower_slips_mask] = (lower_bound_delta + lower_deltas)[lower_slips_mask]
+
+                return trend_line + rand_deltas
+
+            randomData = bounded_random_walk(reps, lower_bound=-1, upper_bound =1, start=0, end=0, std=5)
+            if randomData.size > 51:
+                filter_size = 51
+            else:
+                filter_size = randomData.size
+            smooth = randomData#savgol_filter(randomData, filter_size, min(filter_size, 3))
+            val = np.tile(smooth, min(reps, 10))
         
         #val = librosa.resample(val, orig_sr=self.sample_rate, target_sr=self.sample_rate * 0.5)
         #hz = hz / 0.5
@@ -212,7 +247,8 @@ class Poly:
     def start_note(self, note, vel):
         if note not in self.synths:
             self.synths[note] = {"synths": [
-                Synth(sample_rate=self.sample_rate, block_size=self.block_size, detune_coarse=0, detune=0, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.4, release=20, delay_feedback=0, delay_mix=0),
+                #Synth(sample_rate=self.sample_rate, block_size=self.block_size, detune_coarse=0, detune=0, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.4, release=20, delay_feedback=0, delay_mix=0),
+                Synth(sample_rate=self.sample_rate, block_size=self.block_size, detune_coarse=0, detune=0, op="randomwalk", rel_vel=1.0, attack=10, decay=200, sustain=0.3, release=1000, delay_seconds=0.05, delay_length=2, delay_feedback=0.3, delay_mix=0),
                 # Synth(sample_rate=self.sample_rate, block_size=self.block_size, detune_coarse=0, detune=0, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.4, release=20, delay_seconds=0.5, delay_length=5, delay_feedback=0.5, delay_mix=0,
                 #       lfo=Synth(sample_rate=self.sample_rate, block_size=self.block_size, op="tri", rel_vel=0.9, attack=20, decay=2000, sustain=1.0, release=20, delay_seconds=0.2, phase=90, delay_length=2, delay_feedback=0.3, delay_mix=0.2), lfo_freq=13, lfo_velocity=1.0,
                 #       ),
