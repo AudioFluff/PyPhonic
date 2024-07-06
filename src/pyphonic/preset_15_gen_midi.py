@@ -4,7 +4,6 @@
 import random
 
 import pyphonic
-from pyphonic import MidiMessage
 
 last_bar = -1
 first_of_bar = True
@@ -60,9 +59,9 @@ def process(midi, audio):
 
         if last_chord:
             for note in chords[last_chord]["notes"]:
-                midi.append(MidiMessage("note_off", note, 127, 0))
+                midi.append(pyphonic.MidiMessage("note_off", note, 127, 0))
         last_chord = gen_new_chord(last_chord)
         for note in chords[last_chord]["notes"]:
-            midi.append(MidiMessage("note_on", note, 127, 0))
+            midi.append(pyphonic.MidiMessage("note_on", note, 127, 0))
 
     return midi, audio

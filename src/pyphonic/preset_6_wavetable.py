@@ -4,7 +4,6 @@
 from pathlib import Path
 
 import pyphonic
-from pyphonic import MidiMessage
 import numpy as np
 import librosa
 

@@ -4,7 +4,6 @@
 import random
 
 import pyphonic
-from pyphonic import MidiMessage
 
 midi_notes = {x: False for x in range(128)}
 current_pattern = {}
@@ -100,9 +99,9 @@ def play_pattern(cur_16th):
     for hit in current_pattern:
         for start, stop, vel in current_pattern[hit]:
             if cur_16th == start and is_note_on(instruments[hit]):
-                midi_out.append(MidiMessage("note_on", instruments[hit], vel, 0))
+                midi_out.append(pyphonic.MidiMessage("note_on", instruments[hit], vel, 0))
             if cur_16th == stop:
-                midi_out.append(MidiMessage("note_on", instruments[hit], 0, 0))
+                midi_out.append(pyphonic.MidiMessage("note_on", instruments[hit], 0, 0))
     return midi_out
 
 generate_pattern(current_pattern_number)

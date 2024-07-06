@@ -2,7 +2,6 @@
 # Simple MIDI minor triad arpeggiator
 
 import pyphonic
-from pyphonic import MidiMessage
 
 timer = 0
 midibuf = {}
@@ -31,7 +30,7 @@ def add_note(beats_from_now, type, note, velocity, channel):
 
     midibuf[when] = midibuf.get(when, [])
 
-    new_note = MidiMessage(type, note, velocity, channel)
+    new_note = pyphonic.MidiMessage(type, note, velocity, channel)
     if type == "note_off":
         new_note.velocity = 0
     midibuf[when].append(new_note)
