@@ -90,3 +90,7 @@ You can dismiss the warnings. We are sorry they're there and hope they don't und
 When you buy PyPhonic you get a link to download, which includes a unique code similar to a license key. However, the code is only needed for the download; once you have the installer
 there is no activation process, and there is no copy protection.
 
+17. Does PyPhonic have ASIO support?
+
+Yes, the standalone version can use ASIO audio (note: ASIO is a trademark of Steinberg Media Technologies GmbH). The VST plugins can too of course,
+provided your DAW is set to use ASIO. Please note that only 44.1kHz is supported and your latency/block size should be something reasonable, typically at least 64 samples (1.5ms).
