@@ -230,10 +230,12 @@ class Synth:
         if self.op == "gen":
             self.waveform = None
             self.one_cycle = self.sample_rate / self.hz
-            self.position = int((self.phase/360) * self.one_cycle)
+            
         else:
             self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
             self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
+        
+        self.position = int((self.phase/360) * self.one_cycle)
     
     def func(self, hz, type_="sin"):
         fs = self.sample_rate
@@ -266,7 +268,8 @@ class Synth:
             
             if self.idx in wavetables:
                 sample, orig_freq = wavetables[self.idx]
-                if orig_freq != hz:
+                print(hz, orig_freq)
+                if abs(orig_freq - hz) > 1.0:
                     sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=self.sample_rate * orig_freq / hz)
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
@@ -274,8 +277,15 @@ class Synth:
                     sample = sample[0]
                 sample /= np.max(np.abs(sample))
                 wavetables[self.idx] = (sample, self.op_extra_params.get("orig_freq", 440))
-            val = np.tile(sample, min(reps, 10))
+            val = sample# np.tile(sample, min(reps, 10))
+            print(reps, val.size)
             self.original_wavetable_length = sample.size
+            print(self.original_wavetable_length)
+
+            # UPDATE tonight:
+            # I mean, did loads, but of this: seems a bit improved, at least the envelope is not restarting now (tho, check it still works
+            # with non-oneshot-non-wavetable synths). There is still something making it change from note to note, however. Noticeably clicky after a few notes.
+            # Also, why tf is it basically fine until a few notes below the root, then turns into a completely different sound.
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
@@ -317,10 +327,10 @@ class Synth:
         return val
     
     def stop_note(self):
-        self.envelope.start_release()
+        if not self.envelope.release_done:
+            self.envelope.start_release()
         min_delay = self.delay_buf.size // self.block_size
         self._delay_ends_in = self.delay_length * min_delay
-        self.position = 0
     
     def is_active(self):
         if self.stopped:
@@ -329,6 +339,7 @@ class Synth:
     
     def renew(self):
         self.envelope = ADSR(self.attack * self.sample_rate, self.decay * self.sample_rate, self.sustain, self.release * self.sample_rate)
+        self.position = int((self.phase/360) * self.one_cycle)
     
     def render(self):
         is_stopped = self.envelope.release_done
@@ -355,8 +366,11 @@ class Synth:
                 buf = self.waveform[:self.block_size] * self.level
                 self.waveform = np.roll(self.waveform, -self.block_size)
                 self.position += self.block_size
+                print(f"Position {self.position}")
                 
-                if self.op == "wavetable" and self.op_extra_params.get("one_shot") and self.position > self.original_wavetable_length:
+                if self.op == "wavetable" and self.op_extra_params.get("one_shot") and self.position >= self.original_wavetable_length:
+                    print(f"Chopping: {self.position - self.original_wavetable_length}")
+                    buf[self.position - self.original_wavetable_length:] = 0
                     self.stop_note()
 
             buf *= self.envelope.render(self.block_size)
@@ -513,7 +527,7 @@ def get_preset(name):
     }
 
 # poly = Poly(**get_preset("cello"))
-poly = Poly(stack=[Synth(op="wavetable", rel_vel=1.0, op_extra_params={"one_shot": True, "orig_freq": 5000, "sample": pyphonic.getDataDir() + "/chh.pkl"})])
+poly = Poly(stack=[Synth(op="wavetable", rel_vel=1.0, op_extra_params={"one_shot": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/chh.pkl"})])
 
 # Or, to define one from scratch:
 # poly = Poly(
