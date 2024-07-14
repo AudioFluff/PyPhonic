@@ -24,8 +24,14 @@ class ADSR:
         self.is_on = True
         self.release_done = False
     def start_release(self):
+        if not self.is_on:
+            return
         self.is_on = False
         self.current = self.sustain
+        self.release_done = False
+    def reset(self):
+        self.is_on = True
+        self.current = 0
         self.release_done = False
     def render(self, num):
         buf = []
@@ -234,7 +240,7 @@ class Synth:
         else:
             self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
             self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
-        
+
         self.position = int((self.phase/360) * self.one_cycle)
     
     def func(self, hz, type_="sin"):
@@ -268,24 +274,50 @@ class Synth:
             
             if self.idx in wavetables:
                 sample, orig_freq = wavetables[self.idx]
-                print(hz, orig_freq)
+
                 if abs(orig_freq - hz) > 1.0:
-                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=self.sample_rate * orig_freq / hz)
+                    print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
+                    sample = np.tile(sample, 10)
+                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
                 if sample.shape[0] > 1:
                     sample = sample[0]
+                if self.op_extra_params.get("start"):
+                    start = int(self.op_extra_params["start"] * sample.size)
+                else:
+                    start = 0
+                if self.op_extra_params.get("end"):
+                    if self.op_extra_params.get("find_closest"):
+                        l = int(self.op_extra_params.get("end") * sample.size)
+                        r = l
+                        target = sample[start]
+                        best = float("inf")
+                        best_idx = None
+                        while l > start and r < sample.size:
+                            if abs(sample[l] - target) < best:
+                                best = abs(sample[l] - target)
+                                best_idx = l
+                            if abs(sample[r] - target) < best:
+                                best = abs(sample[r] - target)
+                                best_idx = r
+                            l -= 1
+                            r += 1
+                        end = best_idx
+                    else:
+                        end = int(self.op_extra_params["end"] * sample.size)
+                else:
+                    end = sample.size
+                sample = sample[start:end]
                 sample /= np.max(np.abs(sample))
-                wavetables[self.idx] = (sample, self.op_extra_params.get("orig_freq", 440))
-            val = sample# np.tile(sample, min(reps, 10))
-            print(reps, val.size)
+                orig_freq = self.op_extra_params.get("orig_freq", 440)
+                if abs(orig_freq - hz) > 1.0:
+                    print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
+                    sample = np.tile(sample, 10)
+                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                wavetables[self.idx] = (sample, hz)
             self.original_wavetable_length = sample.size
-            print(self.original_wavetable_length)
-
-            # UPDATE tonight:
-            # I mean, did loads, but of this: seems a bit improved, at least the envelope is not restarting now (tho, check it still works
-            # with non-oneshot-non-wavetable synths). There is still something making it change from note to note, however. Noticeably clicky after a few notes.
-            # Also, why tf is it basically fine until a few notes below the root, then turns into a completely different sound.
+            val = np.tile(sample, min(reps, 10))
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
@@ -316,10 +348,20 @@ class Synth:
                 val = val[:max_size]
         else:
             max_size = int(reps * self.one_cycle)
-            if max_size > self.sample_rate:
-                val = np.tile(val[:int(self.one_cycle)], 2)
+            if self.op != "wavetable":
+                if max_size > self.sample_rate:
+                    val = np.tile(val[:int(self.one_cycle)], 2)
+                else:
+                    val = val[:max_size]
             else:
-                val = val[:max_size]
+                max_size = int(self.one_cycle * self.original_wavetable_length / hz)
+                print(self.one_cycle, max_size, self.original_wavetable_length, reps)
+                self.original_wavetable_length = max_size
+                val = val[:min(max_size, self.original_wavetable_length)]
+                # if max_size > self.original_wavetable_length:
+                #     val = val[:self.original_wavetable_length]
+                # else:
+                #     val = val[:max_size]
 
         while val.shape[0] < self.block_size:
             val = np.append(val, val)
@@ -329,8 +371,9 @@ class Synth:
     def stop_note(self):
         if not self.envelope.release_done:
             self.envelope.start_release()
-        min_delay = self.delay_buf.size // self.block_size
-        self._delay_ends_in = self.delay_length * min_delay
+            min_delay = self.delay_buf.size // self.block_size
+            self._delay_ends_in = self.delay_length * min_delay
+        self.stopped = True
     
     def is_active(self):
         if self.stopped:
@@ -338,11 +381,15 @@ class Synth:
         return True
     
     def renew(self):
+        self.stopped = False
         self.envelope = ADSR(self.attack * self.sample_rate, self.decay * self.sample_rate, self.sustain, self.release * self.sample_rate)
         self.position = int((self.phase/360) * self.one_cycle)
+        if self.op == "wavetable":  # restart, from the beginning (modified by phase)
+            self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
+            self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
     
     def render(self):
-        is_stopped = self.envelope.release_done
+        is_stopped = self.envelope.release_done or self.stopped
         if not is_stopped:
             if self.waveform is None:
                 num = self.block_size
@@ -365,21 +412,28 @@ class Synth:
             else:
                 buf = self.waveform[:self.block_size] * self.level
                 self.waveform = np.roll(self.waveform, -self.block_size)
-                self.position += self.block_size
-                print(f"Position {self.position}")
+                if self.position is not None:
+                    self.position += self.block_size
                 
-                if self.op == "wavetable" and self.op_extra_params.get("one_shot") and self.position >= self.original_wavetable_length:
-                    print(f"Chopping: {self.position - self.original_wavetable_length}")
-                    buf[self.position - self.original_wavetable_length:] = 0
-                    self.stop_note()
-
+                if self.op == "wavetable" and self.position >= self.original_wavetable_length:
+                    if self.op_extra_params.get("one_shot"):
+                        buf[self.position - self.original_wavetable_length:] = 0
+                        self.stop_note()
+                        self.stopped = True
+                    else:
+                        if not self.stopped:
+                            self.position = 0
+                            self.envelope.reset()
+            
             buf *= self.envelope.render(self.block_size)
             if self.lfo is not None:
                 lfo = self.lfo.render()
                 lfo = 1 + lfo
                 buf *= lfo
+
         else:
             buf = np.zeros(self.block_size, dtype=np.float32)
+        
 
         if self.filter is not None:
             buf = self.filter(buf)
@@ -527,7 +581,12 @@ def get_preset(name):
     }
 
 # poly = Poly(**get_preset("cello"))
-poly = Poly(stack=[Synth(op="wavetable", rel_vel=1.0, op_extra_params={"one_shot": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/chh.pkl"})])
+poly = Poly(
+    stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
+                 op_extra_params={"one_shot": False, "start": 0.1, "end": 0.9,
+                                  "find_closest": False, "orig_freq": 100, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
+    filters=[]#Filter.lowpass(cutoff=4000, order=4, drywet=0.5)]
+    )
 
 # Or, to define one from scratch:
 # poly = Poly(
@@ -562,7 +621,7 @@ def process_npy(midi_messages, audio):
             poly.stop_note(m.note)
     
     render = poly.render()
-    out = np.stack((render, render), axis=0)
+    out = np.stack((render, render), axis=0, dtype=np.float32)
     return midi_messages, out
 
 
