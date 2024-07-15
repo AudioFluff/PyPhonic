@@ -278,7 +278,8 @@ class Synth:
                 if abs(orig_freq - hz) > 1.0:
                     print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
                     # sample = np.tile(sample, 10)
-                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                    # sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                    sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
                 if sample.shape[0] > 1:
@@ -308,17 +309,18 @@ class Synth:
                         end = int(self.op_extra_params["end"] * sample.size)
                 else:
                     end = sample.size
-                sample = sample[start:end]
+                # sample = sample[start:end]
                 sample /= np.max(np.abs(sample))
                 orig_freq = self.op_extra_params.get("orig_freq", 440)
                 if abs(orig_freq - hz) > 1.0:
                     print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
                     # sample = np.tile(sample, 10)
-                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                    # sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                    sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
                 wavetables[self.idx] = (sample, hz)
             self.original_wavetable_length = sample.size
             val = sample
-            # val = np.tile(sample, min(reps, 10))
+            val = np.tile(sample, min(reps, 10))
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
@@ -585,7 +587,7 @@ def get_preset(name):
 # poly = Poly(**get_preset("cello"))
 poly = Poly(
     stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
-                 op_extra_params={"one_shot": False, "start": 0.1, "end": 0.9,
+                 op_extra_params={"one_shot": False, #"start": 0.1, "end": 0.9,
                                   "find_closest": False, "orig_freq": 100, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
     filters=[]#Filter.lowpass(cutoff=4000, order=4, drywet=0.5)]
     )
