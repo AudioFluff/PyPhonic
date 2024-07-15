@@ -277,7 +277,7 @@ class Synth:
 
                 if abs(orig_freq - hz) > 1.0:
                     print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
-                    sample = np.tile(sample, 10)
+                    # sample = np.tile(sample, 10)
                     sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
@@ -313,11 +313,12 @@ class Synth:
                 orig_freq = self.op_extra_params.get("orig_freq", 440)
                 if abs(orig_freq - hz) > 1.0:
                     print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
-                    sample = np.tile(sample, 10)
+                    # sample = np.tile(sample, 10)
                     sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
                 wavetables[self.idx] = (sample, hz)
             self.original_wavetable_length = sample.size
-            val = np.tile(sample, min(reps, 10))
+            val = sample
+            # val = np.tile(sample, min(reps, 10))
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
@@ -354,10 +355,11 @@ class Synth:
                 else:
                     val = val[:max_size]
             else:
-                max_size = int(self.one_cycle * self.original_wavetable_length / hz)
-                print(self.one_cycle, max_size, self.original_wavetable_length, reps)
-                self.original_wavetable_length = max_size
-                val = val[:min(max_size, self.original_wavetable_length)]
+                pass
+                # max_size = int(self.one_cycle * self.original_wavetable_length / hz)
+                # print(self.one_cycle, max_size, self.original_wavetable_length, reps)
+                # self.original_wavetable_length = max_size
+                # val = val[:min(max_size, self.original_wavetable_length)]
                 # if max_size > self.original_wavetable_length:
                 #     val = val[:self.original_wavetable_length]
                 # else:
