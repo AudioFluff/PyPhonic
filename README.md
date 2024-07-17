@@ -1,8 +1,8 @@
-# Pyphonic
+# PyPhonic
 
 ![Publish workflow](https://github.com/AudioFluff/PyPhonic/actions/workflows/python-publish.yml/badge.svg) ![Docs workflow](https://github.com/AudioFluff/PyPhonic/actions/workflows/pages-publish.yml/badge.svg) 
 
-This is the Python library for the Pyphonic VST plugin.
+This is the Python library for the PyPhonic VST plugin.
 
 ![Plugin screenshot](docs/plugin_standalone.png)
 
@@ -84,7 +84,7 @@ pyphonic.start(process_npy, PORT)
 
 YMMV with network audio, particularly if you're running this server on a different computer than the VST.
 
-That's why the Pyphonic VST also provides the ability to then take the **exact same Python code** and run it _within the VST_. In other words, the remote setup is great for POC and debugging, the next step is to run it in the VST itself. (Optional third step is then to translate the Python code to C++ but that's on you).
+That's why the PyPhonic VST also provides the ability to then take the **exact same Python code** and run it _within the VST_. In other words, the remote setup is great for POC and debugging, the next step is to run it in the VST itself. (Optional third step is then to translate the Python code to C++ but that's on you).
 
 Remotely, you can use any third party Python lib installed in your environment (e.g. `PyTorch`). In the VST, currently, `numpy`, `scipy`, `torch` and `librosa` (which includes `numba` and `scikit-learn`) are offered.
 
