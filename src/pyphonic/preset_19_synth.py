@@ -104,7 +104,7 @@ class Filter:
     def resonant(cls, w, Q, drywet=0.0):
         return cls(w=w, Q=Q, type="resonant", drywet=drywet)
 
-wavetables = defaultdict()
+wavetables = defaultdict(dict)
 
 class Synth:
 
@@ -273,13 +273,15 @@ class Synth:
             self.position = 0
             
             if self.idx in wavetables:
-                sample, orig_freq = wavetables[self.idx]
-
-                if abs(orig_freq - hz) > 1.0:
-                    # sample = np.tile(sample, 10)
-                    print("resampling AGAIN, I need to cache these")
-                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
-                    # sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
+                wavetable_dict = wavetables[self.idx]
+                if hz in wavetable_dict:
+                    sample = wavetable_dict[hz]
+                else:
+                    closest = min(wavetable_dict.keys(), key=lambda x: abs(x - hz))
+                    sample = wavetable_dict[closest]
+                    if abs(closest - hz) > 1.0:
+                        sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * closest / hz))
+                    wavetables[self.idx][hz] = sample
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
                 
@@ -318,16 +320,21 @@ class Synth:
                 if abs(orig_freq - hz) > 1.0:
                     sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
                 
-                wavetables[self.idx] = (sample, hz)
+                wavetables[self.idx][hz] = sample
             self.original_wavetable_length = sample.size
             val = sample
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
             if self.idx in wavetables:
-                smooth, orig_freq = wavetables[self.idx]
-                if orig_freq != hz:
-                    smooth = librosa.resample(smooth, orig_sr=self.sample_rate, target_sr=self.sample_rate * orig_freq / hz)
+                wavetable_dict = wavetables[self.idx]
+                if hz in wavetable_dict:
+                    smooth = wavetable_dict[hz]
+                else:
+                    closest = min(wavetable_dict.keys(), key=lambda x: abs(x - hz))
+                    smooth = wavetable_dict[closest]
+                    if abs(closest - hz) > 1.0:
+                        smooth = librosa.resample(smooth, orig_sr=self.sample_rate, target_sr=self.sample_rate * closest / hz)
             else:
                 randomData = bounded_random_walk(reps, lower_bound=-1, upper_bound=1, start=0, end=0, std=self.op_extra_params.get("std", 1))
                 if self.op_extra_params.get("filter_size"):
@@ -339,7 +346,7 @@ class Synth:
                     smooth = savgol_filter(randomData, filter_size, min(filter_size, self.op_extra_params.get("filter_poly_degree")))
                 else:
                     smooth = randomData
-                wavetables[self.idx] = (smooth, hz)
+                wavetables[self.idx][hz] = smooth
             val = np.tile(smooth, min(reps, 10))
 
         # Find integer periods
