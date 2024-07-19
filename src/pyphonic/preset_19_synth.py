@@ -276,12 +276,14 @@ class Synth:
                 sample, orig_freq = wavetables[self.idx]
 
                 if abs(orig_freq - hz) > 1.0:
-                    print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
                     # sample = np.tile(sample, 10)
-                    # sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
-                    sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
+                    print("resampling AGAIN, I need to cache these")
+                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                    # sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
             else:
                 sample = np.load(self.op_extra_params["sample"], allow_pickle=True)
+                
+
                 if sample.shape[0] > 1:
                     sample = sample[0]
                 if self.op_extra_params.get("start"):
@@ -309,18 +311,16 @@ class Synth:
                         end = int(self.op_extra_params["end"] * sample.size)
                 else:
                     end = sample.size
-                # sample = sample[start:end]
+                sample = sample[start:end]
+
                 sample /= np.max(np.abs(sample))
                 orig_freq = self.op_extra_params.get("orig_freq", 440)
                 if abs(orig_freq - hz) > 1.0:
-                    print(f"{self.sample_rate * orig_freq / hz} is what were resampling to")
-                    # sample = np.tile(sample, 10)
-                    # sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
-                    sample = librosa.effects.pitch_shift(sample, sr=44100, n_steps=random.randint(-20, 20))
+                    sample = librosa.resample(sample, orig_sr=self.sample_rate, target_sr=int(self.sample_rate * orig_freq / hz))
+                
                 wavetables[self.idx] = (sample, hz)
             self.original_wavetable_length = sample.size
             val = sample
-            val = np.tile(sample, min(reps, 10))
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
@@ -357,15 +357,46 @@ class Synth:
                 else:
                     val = val[:max_size]
             else:
-                pass
-                # max_size = int(self.one_cycle * self.original_wavetable_length / hz)
-                # print(self.one_cycle, max_size, self.original_wavetable_length, reps)
-                # self.original_wavetable_length = max_size
-                # val = val[:min(max_size, self.original_wavetable_length)]
-                # if max_size > self.original_wavetable_length:
-                #     val = val[:self.original_wavetable_length]
-                # else:
-                #     val = val[:max_size]
+                def find_zero_crossing(waveform):
+                    zero_crossings = np.where(np.abs(waveform[1:] - waveform[0]) < 0.0002)[0] # this is quite good
+                    
+                    #candidates = np.abs(waveform[int(waveform.size/1.5):])# - waveform[0])
+                    #zero_crossings = np.where(candidates < 0.001)[0][-1]
+                    #print(zero_crossings, waveform[zero_crossings + (waveform.size//2)], waveform[0])
+                    #return zero_crossings + (waveform.size//2)
+                    if len(zero_crossings) > 0:#candidates) > 0:
+                        print(zero_crossings, waveform[zero_crossings[-1] + 1], waveform[0])
+                        return zero_crossings[-1] + 1
+                        # margins = np.logspace(-9, -1, 20)
+                        # for margin in margins:
+                        #     for i, c in enumerate(reversed(candidates)):
+                        #         if c < margin:
+                        #             print(c, margin, i)
+                        #             return (waveform.size - i) + (int(waveform.size/1.5))
+                        for zc in reversed(zero_crossings):
+                            if zc + 1 < len(waveform):
+                                if np.sign(waveform[zc - 1]) != np.sign(waveform[zc + 1]):
+                                    print(zc, waveform[zc])
+                                    return zc + 1
+                        print(zero_crossings[-1] + 1, waveform)
+                        return zero_crossings.max()#[-1]
+                    else:
+                        return len(waveform)
+            
+                def tile_waveform(waveform, min_size):
+                    zero_crossing_point = find_zero_crossing(waveform)
+                    waveform = waveform[:zero_crossing_point]
+                    tiled_waveform = waveform
+                    while len(tiled_waveform) < min_size:
+                        tiled_waveform = np.append(tiled_waveform, waveform)
+                    return tiled_waveform
+                val = tile_waveform(val, max_size)
+
+                # THIS WORKS PRETTY WELL, BUT ONLY WHEN THE WAVETABLE LENGTH IS ~1 CYCLE. WHICH IS CORRECT, SINCE WAVETABLE IS MEANT TO BE ONE COMPLETE CYCLE ONLY!
+                # STILL TRYING TO IMPROVE THE CLICKING, AI CROSSFADE DIDN'T SEEM TO HELP
+                #import pickle
+                #pickle.dump(val, open("/tmp/wavetable.pickle", "wb"))
+
 
         while val.shape[0] < self.block_size:
             val = np.append(val, val)
@@ -587,10 +618,16 @@ def get_preset(name):
 # poly = Poly(**get_preset("cello"))
 poly = Poly(
     stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
-                 op_extra_params={"one_shot": False, #"start": 0.1, "end": 0.9,
-                                  "find_closest": False, "orig_freq": 100, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
+                 op_extra_params={"one_shot": False, "start": 0.9, "end": 0.92,
+                                  "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
     filters=[]#Filter.lowpass(cutoff=4000, order=4, drywet=0.5)]
     )
+
+# THIS BASICALLY WORKS FINE WHEN THE WAVETABLE IS SUPER SHORT, ~1 CYCLE. WHICH IS CORRECT - USER IS IN DANGER IF THEY'RE USING LONGER
+# WAVETABLES, OBVIOUSLY, SINCE WAVETABLE IS MEANT TO BE ONE COMPLETE CYCLE ONLY! THERE IS JUST SOME OCCASIONAL CLICKING WHICH CAN PROB
+# BE SOLVED WITH TILING IT.
+
+# ALSO, SHOULD HAVE THE ABILITY TO CYCLE THROUGH THE WAVETABLE, INCREASING START AND END BY SMALL AMOUNT EACH TIME.
 
 # Or, to define one from scratch:
 # poly = Poly(
