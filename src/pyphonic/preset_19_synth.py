@@ -365,28 +365,14 @@ class Synth:
                     val = val[:max_size]
             else:
                 def find_zero_crossing(waveform):
-                    zero_crossings = np.where(np.abs(waveform[1:] - waveform[0]) < 0.0002)[0] # this is quite good
-                    
-                    #candidates = np.abs(waveform[int(waveform.size/1.5):])# - waveform[0])
-                    #zero_crossings = np.where(candidates < 0.001)[0][-1]
-                    #print(zero_crossings, waveform[zero_crossings + (waveform.size//2)], waveform[0])
-                    #return zero_crossings + (waveform.size//2)
-                    if len(zero_crossings) > 0:#candidates) > 0:
-                        print(zero_crossings, waveform[zero_crossings[-1] + 1], waveform[0])
-                        return zero_crossings[-1] + 1
-                        # margins = np.logspace(-9, -1, 20)
-                        # for margin in margins:
-                        #     for i, c in enumerate(reversed(candidates)):
-                        #         if c < margin:
-                        #             print(c, margin, i)
-                        #             return (waveform.size - i) + (int(waveform.size/1.5))
-                        for zc in reversed(zero_crossings):
-                            if zc + 1 < len(waveform):
-                                if np.sign(waveform[zc - 1]) != np.sign(waveform[zc + 1]):
-                                    print(zc, waveform[zc])
-                                    return zc + 1
-                        print(zero_crossings[-1] + 1, waveform)
-                        return zero_crossings.max()#[-1]
+                    if self.op_extra_params.get("hard_cut"):
+                        return int(self.one_cycle * int(self.op_extra_params.get("hard_cut", 0)))
+                    margins = np.logspace(-9, -1, 20)
+                    for margin in margins:
+                        zc = np.where(np.abs(waveform[1:] - waveform[0]) < margin)[0]
+                        for z in reversed(zc):
+                            if z < len(waveform) and z > waveform.size // 2 and z >= self.one_cycle:
+                                return z + 1
                     else:
                         return len(waveform)
             
@@ -398,9 +384,6 @@ class Synth:
                         tiled_waveform = np.append(tiled_waveform, waveform)
                     return tiled_waveform
                 val = tile_waveform(val, max_size)
-
-                # THIS WORKS PRETTY WELL, BUT ONLY WHEN THE WAVETABLE LENGTH IS ~1 CYCLE. WHICH IS CORRECT, SINCE WAVETABLE IS MEANT TO BE ONE COMPLETE CYCLE ONLY!
-                # STILL TRYING TO IMPROVE THE CLICKING, AI CROSSFADE DIDN'T SEEM TO HELP
                 #import pickle
                 #pickle.dump(val, open("/tmp/wavetable.pickle", "wb"))
 
@@ -595,26 +578,57 @@ presets = {
         ],
         "filters": [(Filter.lowpass, {"cutoff": 4000, "order": 4, "drywet": 0.5})], "lfos": [{"synth": (Synth, {"op": "sin", "rel_vel": 1.0}), "freq": 10, "vel": 0.1}],
         "delay_seconds": 0.15, "delay_length": 2, "delay_feedback": 0.12
+    },
+    "king_henry": {
+        "stack": [
+            (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
+                 "op_extra_params": {"one_shot": False, "start": 0.62, "end": 0.621, "hard_cut": False,
+                                  "find_closest": False, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
+        "filters": [(Filter.highpass, {"cutoff": 200, "order": 4, "drywet": 0.5})]
+    },
+    "hobbit": {
+        "stack": [
+            (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
+                 "op_extra_params": {"one_shot": False, "start": 0.62, "end": 0.621, "hard_cut": False,
+                                  "find_closest": False, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
+    },
+    "nice_and_correct": {
+        "stack": [
+            (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
+                 "op_extra_params": {"one_shot": False, "start": 0.5, "end": 0.92, "hard_cut": False,
+                                  "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
+    },
+    "blurgh": {
+        "stack": [
+            (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
+                 "op_extra_params": {"one_shot": False, "start": 0.5, "end": 0.6, "hard_cut": 6,
+                                  "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
+    },
+    "machine_elf": {
+        "stack": [
+            (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
+                 "op_extra_params": {"one_shot": False, "start": 0.5, "end": 0.501, "hard_cut": 10,
+                                  "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
     }
 }
 
 def get_preset(name):
     preset = presets[name]
     synth_stack = []
-    for stack_item in preset["stack"]:
+    for stack_item in preset.get("stack", []):
         cls, params = stack_item
         synth_stack.append(cls(**params))
     filter_stack = []
-    for filter in preset["filters"]:
+    for filter in preset.get("filters", []):
         cls, params = filter
         filter_stack.append(cls(**params))
     lfo_stack = []
-    for lfo in preset["lfos"]:
+    for lfo in preset.get("lfos", []):
         synth, params = lfo["synth"]
         lfo_stack.append((synth(**params), lfo["freq"], lfo["vel"]))
-    preset.pop("stack")
-    preset.pop("filters")
-    preset.pop("lfos")
+    for key in ["stack", "filters", "lfos"]:
+        if key in preset:
+            preset.pop(key)
     return {
         "stack": synth_stack,
         "filters": filter_stack,
@@ -622,13 +636,13 @@ def get_preset(name):
         **preset
     }
 
-# poly = Poly(**get_preset("cello"))
-poly = Poly(
-    stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
-                 op_extra_params={"one_shot": False, "start": 0.9, "end": 0.92,
-                                  "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
-    filters=[]#Filter.lowpass(cutoff=4000, order=4, drywet=0.5)]
-    )
+poly = Poly(**get_preset("machine_elf"))
+# poly = Poly(
+#     stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
+#                  op_extra_params={"one_shot": False, "start": 0.62, "end": 0.621, "hard_cut": False, # 0.5 to 0.92 is nice with hard cut off
+#                                   "find_closest": False, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
+#     filters=[Filter.highpass(cutoff=200, order=4, drywet=0.5)]
+#     )
 
 # THIS BASICALLY WORKS FINE WHEN THE WAVETABLE IS SUPER SHORT, ~1 CYCLE. WHICH IS CORRECT - USER IS IN DANGER IF THEY'RE USING LONGER
 # WAVETABLES, OBVIOUSLY, SINCE WAVETABLE IS MEANT TO BE ONE COMPLETE CYCLE ONLY! THERE IS JUST SOME OCCASIONAL CLICKING WHICH CAN PROB
