@@ -501,28 +501,6 @@ class Poly:
     def start_note(self, note, vel):
         if note not in self.synths:
             self.synths[note] = [deepcopy(synth) for synth in self.synth_stack]
-
-                #Synth(op="sin", rel_vel=1.0, filter=Filter.bandpass()),
-
-                # Synth(detune_coarse=0, detune=0, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.4, release=20, delay_feedback=0, delay_mix=0),
-                # Synth(detune_coarse=0, detune=0, op="gen", gen_op=Synth.square, rel_vel=1.0, attack=1, decay=3, sustain=0.6, release=1.1, delay_feedback=0, delay_mix=0,
-                #       freq_mod=Synth(detune_coarse=0, detune=0, op="gen", gen_op=Synth.square, rel_vel=0.5, attack=1, decay=1, sustain=0.4, release=0.0001, delay_feedback=0, delay_mix=0), freq_mod_freq=2, freq_mod_velocity=0.00005),
-                
-                # Kind of a train
-                # Synth(op="saw", rel_vel=0.2, attack=0.001, decay=0.1, sustain=0.2, release=0.1, lfo=Synth(op="square", rel_vel=1.0), lfo_freq=5, lfo_velocity=1.0),
-                # Synth(op="noise", rel_vel=0.5, attack=0.3, decay=0.5, sustain=0.5, release=0.3, lfo=Synth(op="square", rel_vel=1.0), lfo_freq=5, lfo_velocity=0.8),
-                # Synth(op="gen", gen_op=Synth.noise, rel_vel=0.05, attack=0.01, decay=0.2, phase=45, sustain=0.3, release=0.1),
-
-                
-                
-                # Synth(detune_coarse=0, detune=0, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.4, release=20, delay_seconds=0.5, delay_length=5, delay_feedback=0.5, delay_mix=0,
-                #       lfo=Synth(op="tri", rel_vel=0.9, attack=20, decay=2000, sustain=1.0, release=20, delay_seconds=0.2, phase=90, delay_length=2, delay_feedback=0.3, delay_mix=0.2), lfo_freq=13, lfo_velocity=1.0,
-                #       ),
-                # Synth(detune_coarse=-24, op="sin", rel_vel=0.5, attack=20, decay=2000, sustain=0.7, release=20),
-                # Synth(detune_coarse=-12, op="saw", rel_vel=0.5, attack=200, decay=200, sustain=0.5, release=20000),
-                # Synth(detune_coarse=0, detune=-1, op="saw", phase=-10, attack=200, decay=200, sustain=0.5, release=100),
-                # Synth(detune=0, op="saw", attack=200, decay=200, sustain=0.5, release=2000),
-                # Synth(detune_coarse=0, detune=1, op="saw", phase=10, attack=200, decay=200, sustain=0.5, release=10000)
             for i, synth in enumerate(self.synths[note]):
                 synth.set_sample_rate_block_size(self.sample_rate, self.block_size, i)
                 synth.start_note(note, vel)
@@ -609,6 +587,41 @@ presets = {
             (Synth, {"op": "wavetable", "rel_vel": 1.0, "attack": 0, "decay": 0, "sustain": 1.0, "release": 0,
                  "op_extra_params": {"one_shot": False, "start": 0.5, "end": 0.501, "hard_cut": 10,
                                   "find_closest": True, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"}})],
+    },
+    "train": {
+        "stack": [
+            (Synth, {"op": "saw", "rel_vel": 0.2, "attack": 0.001, "decay": 0.1, "sustain": 0.2, "release": 0.1,
+                     "lfo": Synth(op="square", rel_vel=1.0), "lfo_freq": 5, "lfo_velocity": 1.0}),
+            (Synth, {"op": "noise", "rel_vel": 0.5, "attack": 0.3, "decay": 0.5, "sustain": 0.5, "release": 0.3,
+                        "lfo": Synth(op="square", rel_vel=1.0), "lfo_freq": 5, "lfo_velocity": 0.8}),
+            (Synth, {"op": "gen", "gen_op": Synth.noise, "rel_vel": 0.05, "attack": 0.01, "decay": 0.2, "phase": 45, "sustain": 0.3, "release": 0.1})
+        ]
+    },
+    "mad_square_siren": {
+        "stack": [
+            (Synth, {"op": "sin", "rel_vel": 0.5, "attack": 20, "decay": 2000, "sustain": 0.4, "release": 20, "delay_feedback": 0, "delay_mix": 0}),
+            (Synth, {"op": "gen", "gen_op": Synth.square, "rel_vel": 1.0, "attack": 1, "decay": 3, "sustain": 0.6, "release": 1.1, "delay_feedback": 0, "delay_mix": 0,
+                     "freq_mod": Synth(detune_coarse=0, detune=0, op="gen", gen_op=Synth.square, rel_vel=0.5, attack=1, decay=1, sustain=0.4, release=0.0001, delay_feedback=0, delay_mix=0), "freq_mod_freq": 2, "freq_mod_velocity": 0.00005}),
+        ]
+    },
+    "after_the_explosion": {
+        "stack": [
+            (Synth, {"op": "sin", "rel_vel": 0.5, "attack": 10, "decay": 20, "sustain": 0.4, "release": 2, "delay_seconds": 0.5, "delay_length": 5,
+                     "delay_feedback": 0.5, "delay_mix": 0,
+                     "lfo": Synth(op="tri", rel_vel=0.9, attack=10, decay=20, sustain=1.0, release=0.1, delay_seconds=0.2, phase=90, delay_length=2, delay_feedback=0.3, delay_mix=0.2),
+                     "lfo_freq": 13, "lfo_velocity": 1.0}),
+        ]
+    },
+    "supersaw": {
+        "stack": [
+            (Synth, {"op": "sin", "detune_coarse": -24, "rel_vel": 0.24, "attack": 0.01, "decay": 0.1, "sustain": 0.7, "release": 0.01}),
+            (Synth, {"op": "saw", "detune_coarse": -12, "rel_vel": 0.5, "attack": 0.01, "decay": 0.2, "sustain": 0.5, "release": 0.5}),
+            (Synth, {"op": "saw", "detune_coarse": 0, "detune": -1, "rel_vel": 0.5, "phase": -10, "attack": 0.01, "decay": 0.1, "sustain": 0.5, "release": 0.1}),
+            (Synth, {"op": "saw", "detune": 0, "rel_vel": 0.5, "attack": 0, "decay": 0, "sustain": 1, "release": 0.05}),
+            (Synth, {"op": "saw", "detune": 1, "phase": 10, "rel_vel": 0.5, "attack": 0, "decay": 0.2, "sustain": 0.8, "release": 0.04}),
+            (Synth, {"op": "saw", "detune": 5, "phase": -20, "rel_vel": 0.5, "attack": 0, "decay": 0.2, "sustain": 0.8, "release": 0.04}),
+            (Synth, {"op": "saw", "detune": -5, "phase": 20, "rel_vel": 0.5, "attack": 0, "decay": 0.2, "sustain": 0.8, "release": 0.04}),
+        ]
     }
 }
 
@@ -636,17 +649,7 @@ def get_preset(name):
         **preset
     }
 
-poly = Poly(**get_preset("machine_elf"))
-# poly = Poly(
-#     stack=[Synth(op="wavetable", rel_vel=1.0, attack=0, decay=0, sustain=1.0, release=0,
-#                  op_extra_params={"one_shot": False, "start": 0.62, "end": 0.621, "hard_cut": False, # 0.5 to 0.92 is nice with hard cut off
-#                                   "find_closest": False, "orig_freq": 440, "sample": pyphonic.getDataDir() + "/glockenspiel.pkl"})],
-#     filters=[Filter.highpass(cutoff=200, order=4, drywet=0.5)]
-#     )
-
-# THIS BASICALLY WORKS FINE WHEN THE WAVETABLE IS SUPER SHORT, ~1 CYCLE. WHICH IS CORRECT - USER IS IN DANGER IF THEY'RE USING LONGER
-# WAVETABLES, OBVIOUSLY, SINCE WAVETABLE IS MEANT TO BE ONE COMPLETE CYCLE ONLY! THERE IS JUST SOME OCCASIONAL CLICKING WHICH CAN PROB
-# BE SOLVED WITH TILING IT.
+poly = Poly(**get_preset("supersaw"))
 
 # ALSO, SHOULD HAVE THE ABILITY TO CYCLE THROUGH THE WAVETABLE, INCREASING START AND END BY SMALL AMOUNT EACH TIME.
 
