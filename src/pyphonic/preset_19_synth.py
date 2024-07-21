@@ -239,7 +239,9 @@ class Synth:
             
         else:
             self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
-            self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
+            #self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
+            shift = -int((self.phase / 360) * self.one_cycle)
+            self.waveform = np.concatenate((self.waveform[shift:], self.waveform[:shift]))
 
         self.position = int((self.phase/360) * self.one_cycle)
     
@@ -411,7 +413,9 @@ class Synth:
         self.position = int((self.phase/360) * self.one_cycle)
         if self.op == "wavetable":  # restart, from the beginning (modified by phase)
             self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
-            self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
+            #self.waveform = np.roll(self.waveform, -int((self.phase/360) * self.one_cycle))
+            shift = -int((self.phase / 360) * self.one_cycle)
+            self.waveform = np.concatenate((self.waveform[shift:], self.waveform[:shift]))
     
     def render(self):
         is_stopped = self.envelope.release_done or self.stopped
@@ -436,7 +440,8 @@ class Synth:
                 buf = np.array(buf)
             else:
                 buf = self.waveform[:self.block_size] * self.level
-                self.waveform = np.roll(self.waveform, -self.block_size)
+                #self.waveform = np.roll(self.waveform, -self.block_size)
+                self.waveform = np.concatenate((self.waveform[self.block_size:], self.waveform[:self.block_size]))
                 if self.position is not None:
                     self.position += self.block_size
                 
