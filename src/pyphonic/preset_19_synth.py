@@ -105,6 +105,12 @@ class Filter:
         return cls(w=w, Q=Q, type="resonant", drywet=drywet)
 
 wavetables = defaultdict(dict)
+def reset_wavetables():
+    global wavetables
+    wavetables = defaultdict(dict)
+def get_wavetables():
+    global wavetables
+    return wavetables
 
 class Synth:
 
@@ -241,7 +247,6 @@ class Synth:
             self.waveform = self.func(self.hz, type_=self.op) * self.rel_vel
             shift = -int((self.phase / 360) * self.one_cycle)
             self.waveform = np.concatenate((self.waveform[shift:], self.waveform[:shift]))
-
         self.position = int((self.phase/360) * self.one_cycle)
     
     def func(self, hz, type_="sin"):
@@ -327,11 +332,14 @@ class Synth:
 
         elif type_ == "randomwalk":
             reps = int(fs // hz)
-            if self.idx in wavetables:
+            if self.op_extra_params.get("wavetable") and self.idx not in wavetables:
+                wavetables[self.idx] = self.op_extra_params.get("wavetable")
+            if wavetables.get(self.idx):
                 wavetable_dict = wavetables[self.idx]
                 if hz in wavetable_dict:
                     smooth = wavetable_dict[hz]
                 else:
+                    print("NOT in wavetable dict", hz, wavetables[self.idx].keys())
                     closest = min(wavetable_dict.keys(), key=lambda x: abs(x - hz))
                     smooth = wavetable_dict[closest]
                     if abs(closest - hz) > 1.0:
@@ -475,7 +483,7 @@ class Synth:
                     self._delay_ends_in -= 1
                 self.delay_buf[-self.block_size:] = buf
 
-        return buf
+        return buf.astype(np.float32)
 
 class Poly:
 
@@ -536,7 +544,7 @@ class Poly:
             buf += self.delay_buf[:self.block_size] * self.delay_feedback
             self.delay_buf[-self.block_size:] = buf
 
-        return buf
+        return buf.astype(np.float32)
 
 presets = {
     "basic": {
